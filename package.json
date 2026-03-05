@@ -4,13 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon --watch src --ext ts --exec 'tsx src/server.ts'",
-    "dev:tsx": "cross-env NODE_ENV=development tsx watch src/server.ts",
-    "clean": "rimraf dist",
-    "build": "pnpm run clean && tsc",
-    "start": "node dist/server.js",
-    "start:prod": "cross-env NODE_ENV=production node dist/server.js"
+    "dev": "NODE_ENV=development tsx watch src/server.ts",
+    "build": "rimraf dist && tsc",
+    "start": "NODE_ENV=production node dist/server.js",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
   },
+  "include": ["src/**/*", "prisma.config.ts"],
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -19,15 +21,20 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.3",
+    "@types/pg": "^8.18.0",
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.14",
+    "prisma": "^7.4.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/client": "^7.4.2",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.19.0"
   }
 }

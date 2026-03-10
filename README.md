@@ -151,6 +151,13 @@ pnpm db:studio
 
 Esto abrirá un panel web donde puedes visualizar y modificar los datos de la base de datos.
 
+```
+npx tsx prisma/seed.ts
+```
+
+Esto permite crear los resitros a traves del seed
+
+
 ---
 
 # Scripts disponibles

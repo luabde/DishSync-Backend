@@ -13,8 +13,195 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
+
+enum EstatGeneral {
+  ACTIU
+  INACTIU
+}
+
+enum EstatReserva {
+  PENDENT
+  RESERVADA
+  OCUPADA
+  LLIURE
+  CANCELADA
+  NO_PRESENTAT
+}
+
+enum RolUsuari {
+  ADMIN
+  CAMBRER
+  RESPONSABLE
+}
+
+model Restaurant {
+  id             Int               @id @default(autoincrement())
+  nom            String
+  direccio       String
+  horaris        String
+  telefon        String
+  url            String?
+  descripcio     String?
+  estat          EstatGeneral      @default(ACTIU)
+  zones          Zona[]
+  usuaris        Usuari[]
+  torns          Torn[]
+  reserves       Reserva[]
+  plats          PlatRestaurant[]
+  taules_restaurant TaulaRestaurant[]
+
+  @@map("RESTAURANTS")
+}
+
+model Usuari {
+  id            Int          @id @default(autoincrement())
+  id_restaurant Int
+  nom           String
+  cognoms       String
+  email         String       @unique
+  password      String
+  rol           RolUsuari    @default(CAMBRER)
+  estat         EstatGeneral @default(ACTIU)
+  restaurant    Restaurant   @relation(fields: [id_restaurant], references: [id])
+
+  @@map("USUARIS")
+}
+
+model Taula {
+  id                   Int               @id @default(autoincrement())
+  num_persones         Int
+  span_fila            Int
+  span_columna         Int
+  min_persones_reserva Int
+  instancies           TaulaRestaurant[]
+
+  @@map("TAULES")
+}
+
+model TaulaRestaurant {
+  id            Int        @id @default(autoincrement())
+  id_zona       Int
+  id_restaurant Int
+  id_taula      Int
+  fila          Int
+  columna       Int
+  num_taula     Int
+  zona          Zona       @relation(fields: [id_zona], references: [id])
+  restaurant    Restaurant @relation(fields: [id_restaurant], references: [id])
+  tipusTaula    Taula      @relation(fields: [id_taula], references: [id])
+  reserves      Reserva[]
+
+  @@map("TAULES_RESTAURANT")
+}
+
+model Zona {
+  id            Int               @id @default(autoincrement())
+  id_restaurant Int
+  nom           String
+  capacitat_max Int?
+  restaurant    Restaurant        @relation(fields: [id_restaurant], references: [id])
+  taules        TaulaRestaurant[]
+
+  @@map("ZONES")
+}
+
+model Reserva {
+  id                  Int             @id @default(autoincrement())
+  id_taula_restaurant Int
+  id_restaurant       Int
+  id_client           Int
+  id_torn             Int
+  data                DateTime
+  hora                String
+  num_persones        Int
+  token               String          @unique
+  data_expiracio      DateTime
+  estat               EstatReserva    @default(PENDENT)
+  observacions        String?
+  createdAt           DateTime        @default(now())
+  taula_restaurant    TaulaRestaurant @relation(fields: [id_taula_restaurant], references: [id])
+  restaurant          Restaurant      @relation(fields: [id_restaurant], references: [id])
+  client              Client          @relation(fields: [id_client], references: [id])
+  torn                Torn            @relation(fields: [id_torn], references: [id])
+
+  @@map("RESERVES")
+}
+
+model Client {
+  id        Int              @id @default(autoincrement())
+  nom       String
+  cognoms   String
+  email     String           @unique
+  telefon   String
+  reserves  Reserva[]
+  contactes ContacteClient[]
+
+  @@map("CLIENTS")
+}
+
+model Torn {
+  id            Int           @id @default(autoincrement())
+  id_restaurant Int
+  nom           String
+  hora_inici    String
+  hora_fi       String
+  restaurant    Restaurant    @relation(fields: [id_restaurant], references: [id])
+  horaris_torns HorarisTorn[]
+  reserves      Reserva[]
+
+  @@map("TORNS")
+}
+
+model HorarisTorn {
+  id          Int    @id @default(autoincrement())
+  id_torn     Int
+  hora        String
+  dia_setmana Int?
+  torn        Torn   @relation(fields: [id_torn], references: [id])
+
+  @@map("HORARIS_TORNS")
+}
+
+model PlatRestaurant {
+  id             Int        @id @default(autoincrement())
+  id_restaurant  Int
+  id_plat        Int
+  disponibilitat Boolean    @default(true)
+  restaurant     Restaurant @relation(fields: [id_restaurant], references: [id])
+  plat           Plat       @relation(fields: [id_plat], references: [id])
+
+  @@map("PLAT_RESTAURANT")
+}
+
+model Plat {
+  id            Int               @id @default(autoincrement())
+  id_categoria  Int
+  nom           String
+  descripcio    String?
+  preu          Decimal           @db.Decimal(10, 2)
+  url           String?
+  categoria     Categoria         @relation(fields: [id_categoria], references: [id])
+  disponible_en PlatRestaurant[]
+
+  @@map("PLATS")
+}
+
+model Categoria {
+  id         Int     @id @default(autoincrement())
+  nom        String
+  descripcio String?
+  plats      Plat[]
+
+  @@map("CATEGORIES")
+}
+
+model ContacteClient {
+  id        Int      @id @default(autoincrement())
+  id_client Int
+  missatge  String
+  estat     String   @default("Pendent")
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [id_client], references: [id])
+
+  @@map("CONTACTE_CLIENTS")
 }

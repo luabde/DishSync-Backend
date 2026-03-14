@@ -1,0 +1,8 @@
+-- DropForeignKey
+ALTER TABLE "USUARIS" DROP CONSTRAINT "USUARIS_id_restaurant_fkey";
+
+-- AlterTable
+ALTER TABLE "USUARIS" ALTER COLUMN "id_restaurant" DROP NOT NULL;
+
+-- AddForeignKey
+ALTER TABLE "USUARIS" ADD CONSTRAINT "USUARIS_id_restaurant_fkey" FOREIGN KEY ("id_restaurant") REFERENCES "RESTAURANTS"("id") ON DELETE SET NULL ON UPDATE CASCADE;

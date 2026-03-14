@@ -5,25 +5,24 @@ import { AppError } from "../utils/AppError";
 
 export class UserService {
     static async createUser(data: UserDTO) {
-        // Validar que el email no exista en la bd
-        const existingUser = await prisma.usuari.findUnique({
-            where: {
-                email: data.email
-            }
-        });
-
-        // Validar que el username no exista en la bd
-        const existingUsername = await prisma.usuari.findMany({
-            where: {
-                nom: data.nom
-            }
-        });
-
-        if (existingUser || existingUsername.length > 0) {
-            throw new AppError("El email o el nombre de usuario ya existe", 409);
-        }
-
         try {
+            // Validar que el email no exista en la bd
+            const existingUser = await prisma.usuari.findUnique({
+                where: {
+                    email: data.email
+                }
+            });
+
+            // Validar que el username no exista en la bd
+            const existingUsername = await prisma.usuari.findMany({
+                where: {
+                    nom: data.nom
+                }
+            });
+
+            if (existingUser || existingUsername.length > 0) {
+                throw new AppError("El email o el nombre de usuario ya existe", 409);
+            }
             return await prisma.usuari.create({
                 data: {
                     nom: data.nom,
@@ -43,7 +42,7 @@ export class UserService {
             // Verificamos si es un error específico de Prisma
             if (error instanceof Prisma.PrismaClientKnownRequestError) {
                 // Por ejemplo, el código P2002 de Prisma significa "Violación de restricción Unique"
-                throw new AppError(`Error de base de datos (Prisma Code: ${error.code}).`, 400);
+                throw new AppError(`Error de base de datos (Prisma message: ${error.meta?.cause || error.message}).`, 400);
             }
 
             if (error instanceof Prisma.PrismaClientValidationError) {

@@ -7,7 +7,7 @@ export const UserSchema = z.object({
   estat: z.enum(EstatGeneral).default(EstatGeneral.ACTIU),
   email: z.email("Email incorrecto"),
   password: z.string().min(6, "La contraseña tiene que ser minimo de 6 caracters"),
-  restaurant: z.number().nullable(),
+  restaurant: z.number().nullable().optional(),
   rol: z.enum(RolUsuari)  // ← z.nativeEnum para enums de Prisma
 });
 

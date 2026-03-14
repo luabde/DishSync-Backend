@@ -15,7 +15,10 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "include": ["src/**/*", "prisma.config.ts"],
+  "include": [
+    "src/**/*",
+    "prisma.config.ts"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -38,6 +41,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "pg": "^8.19.0"
+    "pg": "^8.19.0",
+    "zod": "^4.3.6"
   }
 }

@@ -62,7 +62,7 @@ model Usuari {
   password      String
   rol           RolUsuari    @default(CAMBRER)
   estat         EstatGeneral @default(ACTIU)
-  restaurant    Restaurant   @relation(fields: [id_restaurant], references: [id])
+  restaurant    Restaurant?   @relation(fields: [id_restaurant], references: [id])
 
   @@map("USUARIS")
 }

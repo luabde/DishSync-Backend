@@ -21,4 +21,10 @@ export const envConfig = {
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
   },
+
+  // JWT
+  jwt: {
+    jwtSecret: process.env.JWT_SECRET || 'default_secret_key',
+    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'default_refresh_secret_key',
+  }
 };

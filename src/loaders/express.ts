@@ -4,11 +4,16 @@ import { envConfig } from "../config/env.config";
 import { router } from "../api/routes/index";
 import { errorMiddleware } from "../api/middlewares/errorMiddleware";
 import { AppError } from "../utils/AppError";
+import cookieparser from "cookie-parser";
 
 export const expressLoader = (app: Application) => {
   // Middlewares
-  app.use(cors());
+  app.use(cors({
+    origin: envConfig.cors.origin,
+    credentials: true
+  }));
   app.use(express.json());
+  app.use(cookieparser());
 
   app.use("/api", router);
 

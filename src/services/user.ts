@@ -8,6 +8,20 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 export class UserService {
+    private static toSafeUser(user: {
+        id: number;
+        nom: string;
+        email: string;
+        rol: string;
+    }) {
+        return {
+            id: user.id,
+            nom: user.nom,
+            email: user.email,
+            rol: user.rol,
+        };
+    }
+
     static async createUser(data: UserDTO) {
         // Validar que el email no exista en la bd
         const existingUser = await prisma.usuari.findUnique({
@@ -39,16 +53,24 @@ export class UserService {
 
     static async login(email: string, password: string) {
         const user = await prisma.usuari.findUnique({
-            where: { email }
+            where: { email },
+            select: {
+                id: true,
+                nom: true,
+                email: true,
+                rol: true,
+                password: true,
+                refreshToken: true,
+            },
         });
 
-        if(!user) {
+        if (!user) {
             throw new AppError("Credenciales inválidas", 401);
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        if(!isPasswordValid) {
+        if (!isPasswordValid) {
             throw new AppError("Credenciales inválidas", 401);
         }
 
@@ -72,7 +94,8 @@ export class UserService {
             data: { refreshToken }
         });
 
-        return { user, token, refreshToken };
+        const safeUser = UserService.toSafeUser(user);
+        return { user: safeUser, token, refreshToken };
     }
 
     static async refresh(refreshToken: string) {

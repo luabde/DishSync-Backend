@@ -10,6 +10,19 @@ const PRISMA_ERROR_MESSAGES: Record<string, string> = {
 };
 
 export const errorMiddleware = (err: unknown, req: Request, res: Response, next: NextFunction) => {
+  // Error típico cuando el body JSON (ej: base64 de imagen) supera el límite configurado
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "type" in err &&
+    (err as { type?: string }).type === "entity.too.large"
+  ) {
+    return res.status(413).json({
+      status: "fail",
+      message: "El tamaño del payload supera el límite permitido"
+    });
+  }
+
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       status: err.status,

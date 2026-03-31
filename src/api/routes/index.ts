@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { authRouter } from "./auth";
 import { restaurantRouter } from "./restaurant.routes";
 import { taulesRouter } from "./taules.routes";
+import { usuariRouter } from "./usuari.routes";
 
 export const router = Router();
 
@@ -15,3 +16,4 @@ router.get("/rutaPrueba", (req: Request, res: Response) => {
 router.use("/auth", authRouter);
 router.use("/restaurants", restaurantRouter);
 router.use("/taules", taulesRouter);
+router.use("/usuaris", usuariRouter);

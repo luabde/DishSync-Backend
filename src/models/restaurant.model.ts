@@ -1,6 +1,34 @@
 import {z} from "zod";
 import {EstatGeneral} from "../../generated/prisma/client";
 
+const WizardShiftSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  times: z.array(z.string()),
+});
+
+const WizardZoneSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+const WizardTableSchema = z.object({
+  id: z.string(),
+  tableTypeId: z.number(),
+  type: z.number(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number().optional(),
+});
+
+const WizardDataSchema = z.object({
+  shifts: z.array(WizardShiftSchema).default([]),
+  zones: z.array(WizardZoneSchema).default([]),
+  selectedUsers: z.array(z.object({ id: z.number() })).default([]),
+  tableTypesCatalog: z.array(z.unknown()).optional(),
+  tablesByZone: z.record(z.string(), z.array(WizardTableSchema)).default({}),
+});
+
 export const RestaurantSchema = z.object({
   nom:       z.string().min(1),
   direccio:  z.string().min(1),
@@ -9,10 +37,8 @@ export const RestaurantSchema = z.object({
   // Puede venir URL ya existente o vacía para usar upload local.
   url:       z.string().optional().default(""),
   descripcio: z.string().optional(),
-  // Para flujo JSON en frontend: imagen serializada en base64 (sin prefijo data:)
-  imageBase64: z.string().optional(),
-  imageMimeType: z.string().optional(),
-  imageOriginalName: z.string().optional(),
+  // Datos globales del wizard enviados desde frontend para inserts relacionados
+  wizardData: WizardDataSchema.optional(),
 });
 
 export type RestaurantDTO = z.infer<typeof RestaurantSchema>;

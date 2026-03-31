@@ -1,0 +1,9 @@
+import { Router } from "express";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { checkRole } from "../middlewares/role.middleware";
+import { UsuariController } from "../controllers/usuari.controller";
+
+export const usuariRouter = Router();
+
+// Catálogo de usuarios para asignarlos al nuevo restaurante en el wizard.
+usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUsersForAssignment);

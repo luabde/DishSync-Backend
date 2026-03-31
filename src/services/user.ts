@@ -128,4 +128,18 @@ export class UserService {
             data: { refreshToken: null }
         });
     }
+
+    static async getUsersForAssignment() {
+        return prisma.usuari.findMany({
+            select: {
+                id: true,
+                nom: true,
+                cognoms: true,
+                email: true,
+                rol: true,
+                id_restaurant: true,
+            },
+            orderBy: { nom: "asc" },
+        });
+    }
 }

@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 export class UserService {
+    // Auth methods
     private static toSafeUser(user: {
         id: number;
         nom: string;
@@ -129,6 +130,7 @@ export class UserService {
         });
     }
 
+    // Users methods
     static async getUsersForAssignment() {
         return prisma.usuari.findMany({
             where: {
@@ -156,6 +158,35 @@ export class UserService {
                     }
                 }
             }
+        });
+    }
+
+    static async modifyUser(userId: number, data: UserDTO) {
+        const user = await prisma.usuari.findUnique({
+            where: { id: userId },
+        });
+
+        if(!user){
+            throw new AppError("Usuario no encontrado", 404);
+        }
+
+        const updateData: Prisma.UsuariUpdateInput = {
+            nom: data.nom,
+            cognoms: data.cognoms,
+            estat: data.estat,
+            email: data.email,
+            rol: data.rol,
+            ...(data.password ? { password: await bcrypt.hash(data.password, 10) } : {}),
+            ...(data.restaurant !== undefined
+              ? data.restaurant === null
+                ?{  restaurant: { disconnect: true } }
+                : { restaurant: { connect: { id: data.restaurant } } }
+              : {}),
+        };
+
+        return prisma.usuari.update({
+            where: { id: userId },
+            data: updateData,
         });
     }
 }

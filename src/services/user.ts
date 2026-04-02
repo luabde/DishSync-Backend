@@ -145,4 +145,17 @@ export class UserService {
             orderBy: { nom: "asc" },
         });
     }
+
+    static async getAllUsers() {
+        // Obtener todos los usuarios junto con el nombre del restaurante que tiene asignado
+        return prisma.usuari.findMany({
+            include: {
+                restaurant:{
+                    select: {
+                        nom: true,
+                    }
+                }
+            }
+        });
+    }
 }

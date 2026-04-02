@@ -68,21 +68,42 @@ export class RestaurantService {
             }
         }
 
-        // 2) ZONES
+        // 2) ZONES (con capacidad máxima calculada por las mesas de cada zona)
+        const tablesByZone = wizardData?.tablesByZone ?? {};
+        const allTables = Object.values(tablesByZone).flat();
+        const uniqueTableTypeIds = [...new Set(allTables.map((table) => table.tableTypeId))];
+
+        // Catálogo de tipos de mesa para obtener cuántas personas aporta cada una.
+        const taulesCatalog = uniqueTableTypeIds.length > 0
+            ? await prisma.taula.findMany({
+                where: { id: { in: uniqueTableTypeIds } },
+                select: { id: true, num_persones: true },
+            })
+            : [];
+        const personesByTypeId = new Map<number, number>(
+            taulesCatalog.map((taula) => [taula.id, taula.num_persones])
+        );
+
         const zones = wizardData?.zones ?? [];
         const zoneIdMap = new Map<string, number>(); // frontend zoneId -> db zoneId
         for (const zone of zones) {
+            const tablesInZone = tablesByZone[zone.id] ?? [];
+            const capacitatMax = tablesInZone.reduce(
+                (total, table) => total + (personesByTypeId.get(table.tableTypeId) ?? 0),
+                0
+            );
+
             const dbZone = await prisma.zona.create({
                 data: {
                     id_restaurant: restaurant.id,
                     nom: zone.name,
+                    capacitat_max: capacitatMax,
                 },
             });
             zoneIdMap.set(zone.id, dbZone.id);
         }
 
         // 3) TAULES_RESTAURANT (mapa de mesas por zona)
-        const tablesByZone = wizardData?.tablesByZone ?? {};
         for (const [frontendZoneId, tables] of Object.entries(tablesByZone)) {
             const dbZoneId = zoneIdMap.get(frontendZoneId);
             if (!dbZoneId) continue;

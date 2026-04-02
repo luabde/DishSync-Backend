@@ -13,7 +13,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 enum EstatGeneral {
   ACTIU
   INACTIU
@@ -35,19 +34,19 @@ enum RolUsuari {
 }
 
 model Restaurant {
-  id             Int               @id @default(autoincrement())
-  nom            String
-  direccio       String
-  horaris        String
-  telefon        String
-  url            String?
-  descripcio     String?
-  estat          EstatGeneral      @default(ACTIU)
-  zones          Zona[]
-  usuaris        Usuari[]
-  torns          Torn[]
-  reserves       Reserva[]
-  plats          PlatRestaurant[]
+  id                Int               @id @default(autoincrement())
+  nom               String
+  direccio          String
+  horaris           String
+  telefon           String
+  url               String?
+  descripcio        String?
+  estat             EstatGeneral      @default(ACTIU)
+  zones             Zona[]
+  usuaris           Usuari[]
+  torns             Torn[]
+  reserves          Reserva[]
+  plats             PlatRestaurant[]
   taules_restaurant TaulaRestaurant[]
 
   @@map("RESTAURANTS")
@@ -63,7 +62,7 @@ model Usuari {
   rol           RolUsuari    @default(CAMBRER)
   estat         EstatGeneral @default(ACTIU)
   refreshToken  String?
-  restaurant    Restaurant?   @relation(fields: [id_restaurant], references: [id])
+  restaurant    Restaurant?  @relation(fields: [id_restaurant], references: [id], onDelete: SetNull)
 
   @@map("USUARIS")
 }
@@ -87,8 +86,8 @@ model TaulaRestaurant {
   fila          Int
   columna       Int
   num_taula     Int
-  zona          Zona       @relation(fields: [id_zona], references: [id])
-  restaurant    Restaurant @relation(fields: [id_restaurant], references: [id])
+  zona          Zona       @relation(fields: [id_zona], references: [id], onDelete: Cascade)
+  restaurant    Restaurant @relation(fields: [id_restaurant], references: [id], onDelete: Cascade)
   tipusTaula    Taula      @relation(fields: [id_taula], references: [id])
   reserves      Reserva[]
 
@@ -100,7 +99,7 @@ model Zona {
   id_restaurant Int
   nom           String
   capacitat_max Int?
-  restaurant    Restaurant        @relation(fields: [id_restaurant], references: [id])
+  restaurant    Restaurant        @relation(fields: [id_restaurant], references: [id], onDelete: Cascade)
   taules        TaulaRestaurant[]
 
   @@map("ZONES")
@@ -120,10 +119,10 @@ model Reserva {
   estat               EstatReserva    @default(PENDENT)
   observacions        String?
   createdAt           DateTime        @default(now())
-  taula_restaurant    TaulaRestaurant @relation(fields: [id_taula_restaurant], references: [id])
-  restaurant          Restaurant      @relation(fields: [id_restaurant], references: [id])
+  taula_restaurant    TaulaRestaurant @relation(fields: [id_taula_restaurant], references: [id], onDelete: Cascade)
+  restaurant          Restaurant      @relation(fields: [id_restaurant], references: [id], onDelete: Cascade)
   client              Client          @relation(fields: [id_client], references: [id])
-  torn                Torn            @relation(fields: [id_torn], references: [id])
+  torn                Torn            @relation(fields: [id_torn], references: [id], onDelete: Cascade)
 
   @@map("RESERVES")
 }
@@ -146,7 +145,7 @@ model Torn {
   nom           String
   hora_inici    String
   hora_fi       String
-  restaurant    Restaurant    @relation(fields: [id_restaurant], references: [id])
+  restaurant    Restaurant    @relation(fields: [id_restaurant], references: [id], onDelete: Cascade)
   horaris_torns HorarisTorn[]
   reserves      Reserva[]
 
@@ -158,7 +157,7 @@ model HorarisTorn {
   id_torn     Int
   hora        String
   dia_setmana Int?
-  torn        Torn   @relation(fields: [id_torn], references: [id])
+  torn        Torn   @relation(fields: [id_torn], references: [id], onDelete: Cascade)
 
   @@map("HORARIS_TORNS")
 }
@@ -168,20 +167,20 @@ model PlatRestaurant {
   id_restaurant  Int
   id_plat        Int
   disponibilitat Boolean    @default(true)
-  restaurant     Restaurant @relation(fields: [id_restaurant], references: [id])
-  plat           Plat       @relation(fields: [id_plat], references: [id])
+  restaurant     Restaurant @relation(fields: [id_restaurant], references: [id], onDelete: Cascade)
+  plat           Plat       @relation(fields: [id_plat], references: [id], onDelete: Cascade)
 
   @@map("PLAT_RESTAURANT")
 }
 
 model Plat {
-  id            Int               @id @default(autoincrement())
+  id            Int              @id @default(autoincrement())
   id_categoria  Int
   nom           String
   descripcio    String?
-  preu          Decimal           @db.Decimal(10, 2)
+  preu          Decimal          @db.Decimal(10, 2)
   url           String?
-  categoria     Categoria         @relation(fields: [id_categoria], references: [id])
+  categoria     Categoria        @relation(fields: [id_categoria], references: [id])
   disponible_en PlatRestaurant[]
 
   @@map("PLATS")
@@ -202,7 +201,7 @@ model ContacteClient {
   missatge  String
   estat     String   @default("Pendent")
   createdAt DateTime @default(now())
-  client    Client   @relation(fields: [id_client], references: [id])
+  client    Client   @relation(fields: [id_client], references: [id], onDelete: Cascade)
 
   @@map("CONTACTE_CLIENTS")
 }

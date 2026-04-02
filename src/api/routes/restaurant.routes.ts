@@ -32,8 +32,9 @@ restaurantRouter.post(
   RestaurantController.createRestaurant
 );
 
-// Ruta per validar si el restaurant existeix (evita errors de duplicació)
-restaurantRouter.get("/:nom/:direccio", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantExists);
+// Rutas de validación por query params para soportar textos libres (ej: "C/ Major, 12").
+restaurantRouter.get("/validate-name", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantExists);
+restaurantRouter.get("/validate-address", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantDirectionExists);
 
 // Ruta per obtenir la llista de restaurants
 restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants

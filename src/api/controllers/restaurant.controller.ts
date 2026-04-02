@@ -2,8 +2,17 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../loaders/prisma.loader";
 import { RestaurantService } from "../../services/restaurant.service";
 
+type CreateRestaurantRequest = Request & {
+  file?: {
+    originalname: string;
+    buffer: Buffer;
+    mimetype: string;
+    size: number;
+  };
+};
+
 export class RestaurantController {
-  static createRestaurant = async (req: Request, res: Response, next: NextFunction) => {
+  static createRestaurant = async (req: CreateRestaurantRequest, res: Response, next: NextFunction) => {
     try {
       const restaurant = await RestaurantService.createRestaurant(req.body, req.file);
 
@@ -18,13 +27,12 @@ export class RestaurantController {
 
   static validateRestaurantExists = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const nomParam = req.params.nom;
-      const direccioParam = req.params.direccio;
+      const nomParam = req.query.nom;
       const nom = Array.isArray(nomParam) ? nomParam[0] : nomParam;
-      const direccio = Array.isArray(direccioParam) ? direccioParam[0] : direccioParam;
+      if (!nom) return res.status(200).json({ exists: false });
 
       const restaurant = await prisma.restaurant.findFirst({
-        where: { nom, direccio },
+        where: { nom: { equals: String(nom).trim(), mode: "insensitive" } },
         select: { id: true },
       });
 
@@ -33,6 +41,21 @@ export class RestaurantController {
       next(error);
     }
   };
+
+  static validateRestaurantDirectionExists = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const direccioParam = req.query.direccio;
+      const direccio = Array.isArray(direccioParam) ? direccioParam[0] : direccioParam;
+      if (!direccio) return res.status(200).json({ exists: false });
+      const restaurant = await prisma.restaurant.findFirst({
+        where: { direccio: { equals: String(direccio).trim(), mode: "insensitive" } },
+        select: { id: true },
+      });
+      res.status(200).json({ exists: Boolean(restaurant) });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   // Solo esta ruta usa RestaurantService (GET /restaurants)
   static getRestaurants = async (_req: Request, res: Response, next: NextFunction) => {

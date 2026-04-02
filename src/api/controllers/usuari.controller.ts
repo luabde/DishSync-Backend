@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
 import { UserService } from "../../services/user";
-import { AppError } from "../../utils/AppError";
 
 export class UsuariController {
   static getUsersForAssignment = async (_req: Request, res: Response, next: NextFunction) => {
@@ -23,13 +22,7 @@ export class UsuariController {
 
   static modifyUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const rawUserId = Array.isArray(req.params.userId)
-        ? req.params.userId[0]
-        : req.params.userId;
-      const userId = Number.parseInt(rawUserId, 10);
-      if (Number.isNaN(userId)) {
-        throw new AppError("userId inválido", 400);
-      }
+      const userId = Number.parseInt(req.params.userId as string, 10);
       const data = req.body;
       const user = await UserService.modifyUser(userId, data);
       res.status(200).json(user);
@@ -37,4 +30,14 @@ export class UsuariController {
       next(error);
     }
   };
+
+  static deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+    try{
+      const userId = Number.parseInt(req.params.userId as string, 10);
+      await UserService.deleteUser(userId);
+      res.status(200).json({ message: "Usuario eliminado correctamente" });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

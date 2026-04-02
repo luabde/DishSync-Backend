@@ -11,3 +11,5 @@ usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUs
 usuariRouter.get("/allUsers", authMiddleware, checkRole("ADMIN"), UsuariController.getAllUsers);
 
 usuariRouter.put("/:userId", authMiddleware, checkRole("ADMIN"), UsuariController.modifyUser);
+
+usuariRouter.delete("/:userId", authMiddleware, checkRole("ADMIN"), UsuariController.deleteUser);

@@ -131,6 +131,9 @@ export class UserService {
 
     static async getUsersForAssignment() {
         return prisma.usuari.findMany({
+            where: {
+                id_restaurant: null,
+            },
             select: {
                 id: true,
                 nom: true,

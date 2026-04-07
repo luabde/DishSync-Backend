@@ -1,5 +1,6 @@
 import { RestaurantDTO } from "../models/restaurant.model";
 import { prisma } from "../loaders/prisma.loader";
+import { AppError } from "../utils/AppError";
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 
@@ -139,6 +140,46 @@ export class RestaurantService {
     static async getRestaurants() {
         const restaurants = await prisma.restaurant.findMany();
         return restaurants;
+    }
+
+    static async deleteRestaurant(id: number) {
+        // Normaliza a inicio de día para considerar "hoy y futuro" de forma estable.
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const reservas = await prisma.reserva.aggregate({
+            where: {
+                id_restaurant: id,
+                data: {
+                    gte: today,
+                },
+            },
+            _max: {
+                data: true,
+            },
+        });
+
+        if (reservas._max.data) {
+            // Se informa de la última reserva futura para que el usuario sepa cuándo podrá borrar.
+            const ultimaReserva = reservas._max.data.toLocaleDateString("ca-ES");
+            throw new AppError(
+                `Aquest restaurant te reserves futures. Ultima reserva = ${ultimaReserva}. A partir d'aquesta data podras eliminar el restaurant. Mentrestant pots desactivar-lo`,
+                400
+            );
+        }
+
+        // Cuando no tenga reservas futuras, se puede eliminar el restaurante
+        return await prisma.restaurant.delete({
+            where: { id },
+        });
+    }
+
+    static async deactivateRestaurant(id: number) {
+        // Alternativa al borrado cuando negocio bloquea por reservas futuras.
+        return await prisma.restaurant.update({
+            where: { id },
+            data: { estat: "INACTIU" },
+        });
     }
 
 }

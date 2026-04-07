@@ -37,5 +37,8 @@ restaurantRouter.get("/validate-name", authMiddleware, checkRole("ADMIN"), Resta
 restaurantRouter.get("/validate-address", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantDirectionExists);
 
 // Ruta per obtenir la llista de restaurants
-restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants
-);
+restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants);
+
+restaurantRouter.delete("/:id", authMiddleware, checkRole("ADMIN"), RestaurantController.deleteRestaurant);
+// Acción alternativa para bloquear operativa sin borrar histórico.
+restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), RestaurantController.deactivateRestaurant);

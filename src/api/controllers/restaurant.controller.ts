@@ -66,4 +66,25 @@ export class RestaurantController {
       next(error);
     }
   };
+
+  static deleteRestaurant = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const restaurant = await RestaurantService.deleteRestaurant(Number(id));
+      res.status(200).json({ message: "Restaurante eliminado correctamente", restaurant });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static deactivateRestaurant = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Cambia el estado a inactivo sin eliminar registros relacionados.
+      const { id } = req.params;
+      const restaurant = await RestaurantService.deactivateRestaurant(Number(id));
+      res.status(200).json({ message: "Restaurante desactivado correctamente", restaurant });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

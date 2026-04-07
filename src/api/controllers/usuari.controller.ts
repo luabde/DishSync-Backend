@@ -40,4 +40,30 @@ export class UsuariController {
       next(error);
     }
   }
+
+  static validateEmailExists = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const emailParam = req.query.email;
+      const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
+      if (!email) return res.status(200).json({ exists: false });
+
+      const exists = await UserService.validateEmailExists(String(email));
+      res.status(200).json({ exists });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static validateUsernameExists = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const usernameParam = req.query.username;
+      const username = Array.isArray(usernameParam) ? usernameParam[0] : usernameParam;
+      if (!username) return res.status(200).json({ exists: false });
+
+      const exists = await UserService.validateUsernameExists(String(username));
+      res.status(200).json({ exists });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

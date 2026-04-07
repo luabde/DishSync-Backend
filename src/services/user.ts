@@ -35,6 +35,21 @@ export class UserService {
             throw new AppError("El email ya existe", 409);
         }
 
+        // Validar que el nombre de usuario no exista (comparación case-insensitive)
+        const existingUsername = await prisma.usuari.findFirst({
+            where: {
+                nom: {
+                    equals: data.nom.trim(),
+                    mode: "insensitive",
+                },
+            },
+            select: { id: true },
+        });
+
+        if (existingUsername) {
+            throw new AppError("El nombre de usuario ya existe", 409);
+        }
+
         const newUser = await prisma.usuari.create({
             data: {
                 nom: data.nom,
@@ -50,6 +65,27 @@ export class UserService {
         });
 
         return newUser.id;
+    }
+
+    static async validateEmailExists(email: string) {
+        const user = await prisma.usuari.findUnique({
+            where: { email: email.trim() },
+            select: { id: true },
+        });
+        return Boolean(user);
+    }
+
+    static async validateUsernameExists(username: string) {
+        const user = await prisma.usuari.findFirst({
+            where: {
+                nom: {
+                    equals: username.trim(),
+                    mode: "insensitive",
+                },
+            },
+            select: { id: true },
+        });
+        return Boolean(user);
     }
 
     static async login(email: string, password: string) {

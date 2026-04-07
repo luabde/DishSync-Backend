@@ -68,6 +68,7 @@ export class UserService {
     }
 
     static async validateEmailExists(email: string) {
+        // Endpoint de comprobación previa para formularios de alta/edición.
         const user = await prisma.usuari.findUnique({
             where: { email: email.trim() },
             select: { id: true },
@@ -76,6 +77,7 @@ export class UserService {
     }
 
     static async validateUsernameExists(username: string) {
+        // Comprobación case-insensitive de duplicado sobre `nom`.
         const user = await prisma.usuari.findFirst({
             where: {
                 nom: {
@@ -206,13 +208,42 @@ export class UserService {
             throw new AppError("Usuario no encontrado", 404);
         }
 
+        // Evitar colisiones de email con otros usuarios.
+        if (data.email && data.email.trim() !== user.email) {
+            const existingEmailUser = await prisma.usuari.findUnique({
+                where: { email: data.email.trim() },
+                select: { id: true },
+            });
+            if (existingEmailUser && existingEmailUser.id !== userId) {
+                throw new AppError("El email ya existe", 409);
+            }
+        }
+
+        // Evitar colisiones de nombre de usuario con otros usuarios.
+        if (data.nom && data.nom.trim().toLowerCase() !== user.nom.trim().toLowerCase()) {
+            const existingUsernameUser = await prisma.usuari.findFirst({
+                where: {
+                    nom: {
+                        equals: data.nom.trim(),
+                        mode: "insensitive",
+                    },
+                },
+                select: { id: true },
+            });
+            if (existingUsernameUser && existingUsernameUser.id !== userId) {
+                throw new AppError("El nombre de usuario ya existe", 409);
+            }
+        }
+
         const updateData: Prisma.UsuariUpdateInput = {
             nom: data.nom,
             cognoms: data.cognoms,
             estat: data.estat,
             email: data.email,
             rol: data.rol,
+            // Password sólo se actualiza si llega valor; en caso contrario se conserva.
             ...(data.password ? { password: await bcrypt.hash(data.password, 10) } : {}),
+            // Restaurante opcional: null => desconectar, número => conectar.
             ...(data.restaurant !== undefined
               ? data.restaurant === null
                 ?{  restaurant: { disconnect: true } }

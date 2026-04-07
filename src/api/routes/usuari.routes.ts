@@ -9,9 +9,11 @@ export const usuariRouter = Router();
 usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUsersForAssignment);
 
 usuariRouter.get("/allUsers", authMiddleware, checkRole("ADMIN"), UsuariController.getAllUsers);
+// Rutas de validación de unicidad usadas por frontend antes de guardar.
 usuariRouter.get("/validate-email", authMiddleware, checkRole("ADMIN"), UsuariController.validateEmailExists);
 usuariRouter.get("/validate-username", authMiddleware, checkRole("ADMIN"), UsuariController.validateUsernameExists);
 
+// Edición inline del usuario desde la tabla de gestión.
 usuariRouter.put("/:userId", authMiddleware, checkRole("ADMIN"), UsuariController.modifyUser);
 
 usuariRouter.delete("/:userId", authMiddleware, checkRole("ADMIN"), UsuariController.deleteUser);

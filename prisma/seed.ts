@@ -1,4 +1,6 @@
 import "dotenv/config";
+import bcrypt from "bcrypt";
+import { RolUsuari } from "../generated/prisma/client";
 import { prisma } from "../src/loaders/prisma.loader";
 
 async function main() {
@@ -10,6 +12,25 @@ async function main() {
   }
 
   try {
+    const adminPasswordHash = await bcrypt.hash("123456", 10);
+
+    await prisma.usuari.upsert({
+      where: { email: "admin@gmail.com" },
+      update: {
+        password: adminPasswordHash,
+        rol: RolUsuari.ADMIN,
+      },
+      create: {
+        nom: "Admin",
+        cognoms: "DishSync",
+        email: "admin@gmail.com",
+        password: adminPasswordHash,
+        rol: RolUsuari.ADMIN,
+      },
+    });
+
+    console.log("Usuario admin creado/actualizado correctamente.");
+
     // Limpiar datos previos para evitar duplicados si es necesario
     // await prisma.taula.deleteMany(); 
     

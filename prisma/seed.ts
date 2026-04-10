@@ -37,7 +37,7 @@ async function main() {
     const result = await prisma.taula.createMany({
       data: [
         { num_persones: 2, span_fila: 1, span_columna: 1, min_persones_reserva: 1 },
-        { num_persones: 4, span_fila: 1, span_columna: 2, min_persones_reserva: 2 },
+        { num_persones: 4, span_fila: 1, span_columna: 1, min_persones_reserva: 2 },
         { num_persones: 6, span_fila: 1, span_columna: 2, min_persones_reserva: 4 },
         { num_persones: 8, span_fila: 1, span_columna: 3, min_persones_reserva: 6 },
         { num_persones: 10, span_fila: 1, span_columna: 3, min_persones_reserva: 8 },

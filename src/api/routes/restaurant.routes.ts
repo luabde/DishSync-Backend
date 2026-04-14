@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validate } from "../middlewares/validate.middleware";
 import {checkRole} from "../middlewares/role.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { RestaurantSchema } from "../../models/restaurant.model";
+import { RestaurantSchema, UpdateRestaurantSchema } from "../../models/restaurant.model";
 import { RestaurantController } from "../controllers/restaurant.controller";
 import { uploadRestaurantImage } from "../middlewares/upload.middleware";
 
@@ -40,5 +40,10 @@ restaurantRouter.get("/validate-address", authMiddleware, checkRole("ADMIN"), Re
 restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants);
 
 restaurantRouter.delete("/:id", authMiddleware, checkRole("ADMIN"), RestaurantController.deleteRestaurant);
+
+// Ruta per actualizar la información del restaurante
+restaurantRouter.put("/:id", authMiddleware, checkRole("ADMIN"), uploadRestaurantImage, parseWizardData, validate(UpdateRestaurantSchema), RestaurantController.updateRestaurant);
+
 // Acción alternativa para bloquear operativa sin borrar histórico.
+// Patch sirve para actualizar parcialmente un recurso, es decir, solo se actualiza lo que se le pasa.
 restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), RestaurantController.deactivateRestaurant);

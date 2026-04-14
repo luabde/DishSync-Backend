@@ -41,5 +41,16 @@ export const RestaurantSchema = z.object({
   wizardData: WizardDataSchema.optional(),
 });
 
+// En update no permitimos cambiar `horaris` para evitar impactos
+// en la lógica de turnos/reservas.
+export const UpdateRestaurantSchema = z.object({
+  nom: z.string().min(1),
+  direccio: z.string().min(1),
+  telefon: z.string().min(9),
+  url: z.string().optional().default(""),
+  descripcio: z.string().optional(),
+});
+
 export type RestaurantDTO = z.infer<typeof RestaurantSchema>;
+export type UpdateRestaurantDTO = z.infer<typeof UpdateRestaurantSchema>;
 export type EstatGeneralDTO = z.infer<typeof EstatGeneral>;

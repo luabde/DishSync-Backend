@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../loaders/prisma.loader";
 import { RestaurantService } from "../../services/restaurant.service";
 
-type CreateRestaurantRequest = Request & {
+type RestaurantWithFileRequest = Request & {
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -12,7 +12,7 @@ type CreateRestaurantRequest = Request & {
 };
 
 export class RestaurantController {
-  static createRestaurant = async (req: CreateRestaurantRequest, res: Response, next: NextFunction) => {
+  static createRestaurant = async (req: RestaurantWithFileRequest, res: Response, next: NextFunction) => {
     try {
       const restaurant = await RestaurantService.createRestaurant(req.body, req.file);
 
@@ -77,6 +77,19 @@ export class RestaurantController {
     }
   };
 
+  static updateRestaurant = async (req: RestaurantWithFileRequest, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      // IMPORTANTE:
+      // En update aceptamos multipart/form-data y por eso pasamos también req.file.
+      // Si llega imagen nueva, el service la guarda y actualiza `url`.
+      const restaurant = await RestaurantService.updateRestaurant(Number(id), req.body, req.file);
+      res.status(200).json({ message: "Restaurante actualizado correctamente", restaurant });
+    } catch (error) {
+      next(error);
+    }
+  };
+  
   static deactivateRestaurant = async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Cambia el estado a inactivo sin eliminar registros relacionados.

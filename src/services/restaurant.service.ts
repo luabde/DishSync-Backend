@@ -1,10 +1,39 @@
-import { RestaurantDTO } from "../models/restaurant.model";
+import { RestaurantDTO, UpdateRestaurantDTO } from "../models/restaurant.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
 import path from "path";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, unlink, writeFile } from "fs/promises";
 
 export class RestaurantService {
+    private static async saveRestaurantImage(imageFile: { originalname: string; buffer: Buffer }) {
+        // Centraliza el guardado físico para reusar en create y update.
+        const extension = path.extname(imageFile.originalname) || ".jpg";
+        const fileName = `restaurant-${Date.now()}${extension}`;
+        const publicDir = path.join(process.cwd(), "public", "restaurants");
+        const filePath = path.join(publicDir, fileName);
+
+        await mkdir(publicDir, { recursive: true });
+        await writeFile(filePath, imageFile.buffer);
+
+        return `/public/restaurants/${fileName}`;
+    }
+
+    private static async removeLocalRestaurantImage(imageUrl?: string | null) {
+        // Solo eliminamos imágenes locales gestionadas por la app.
+        // Esto evita borrar URLs externas o rutas no controladas.
+        if (!imageUrl || !imageUrl.startsWith("/public/restaurants/")) return;
+
+        const relativePath = imageUrl.replace(/^\/+/, "");
+        const imagePath = path.join(process.cwd(), relativePath);
+
+        try {
+            await unlink(imagePath);
+        } catch {
+            // Si no existe o no se puede borrar, no bloqueamos el update.
+            // Prioridad: permitir que la actualización de datos continue.
+        }
+    }
+
     /**
      * Ejemplo base de alta de restaurante con imagen en local (entorno dev):
      * - Si llega fichero, se guarda en /public/restaurants
@@ -22,17 +51,8 @@ export class RestaurantService {
         };
 
         if (imageFile) {
-            const extension = path.extname(imageFile.originalname) || ".jpg";
-            const fileName = `restaurant-${Date.now()}${extension}`;
-            const publicDir = path.join(process.cwd(), "public", "restaurants");
-            const filePath = path.join(publicDir, fileName);
-
-            // Crea carpeta si no existe y guarda el binario
-            await mkdir(publicDir, { recursive: true });
-            await writeFile(filePath, imageFile.buffer);
-
             // URL accesible desde frontend gracias a express.static
-            imageUrl = `/public/restaurants/${fileName}`;
+            imageUrl = await this.saveRestaurantImage(imageFile);
         }
 
         // Inserta todo de forma secuencial (sin transacción)
@@ -171,6 +191,51 @@ export class RestaurantService {
         // Cuando no tenga reservas futuras, se puede eliminar el restaurante
         return await prisma.restaurant.delete({
             where: { id },
+        });
+    }
+
+    static async updateRestaurant(
+        id: number,
+        data: UpdateRestaurantDTO,
+        imageFile?: { originalname: string; buffer: Buffer }
+    ) {
+        // 1) Validamos que el restaurante exista.
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { id },
+        });
+
+        if (!restaurant) {
+            throw new AppError("Restaurante no encontrado", 404);
+        }
+
+        // Protección adicional: si alguien manda `horaris` manualmente,
+        // no lo usamos en update.
+        const { horaris: _ignoredHoraris, ...safeData } = data as UpdateRestaurantDTO & { horaris?: string };
+
+        // 2) Base de la URL final:
+        // - Si llega `data.url`, la respetamos.
+        // - Si no llega, mantenemos la que ya tenía en DB.
+        let nextUrl = safeData.url ?? restaurant.url ?? "";
+
+        if (imageFile) {
+            // 3) Caso "imagen nueva":
+            // guardamos la nueva, eliminamos la anterior local y persistimos la nueva URL.
+            nextUrl = await this.saveRestaurantImage(imageFile);
+            await this.removeLocalRestaurantImage(restaurant.url);
+        } else if (!safeData.url && restaurant.url) {
+            // 4) Caso "eliminar imagen":
+            // si `url` viene vacía y no hay archivo nuevo, eliminamos la imagen actual.
+            await this.removeLocalRestaurantImage(restaurant.url);
+            nextUrl = "";
+        }
+
+        // 5) Actualizamos el restaurante con el resto de campos + URL final calculada.
+        return await prisma.restaurant.update({
+            where: { id },
+            data: {
+                ...safeData,
+                url: nextUrl,
+            },
         });
     }
 

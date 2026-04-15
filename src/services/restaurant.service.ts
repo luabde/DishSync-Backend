@@ -63,6 +63,21 @@ export class RestaurantService {
             },
         });
 
+        // Vincula el restaurante recién creado con todos los platos existentes.
+        // `disponibilitat` queda en `true` por defecto según el modelo Prisma.
+        const plats = await prisma.plat.findMany({
+            select: { id: true },
+        });
+
+        if (plats.length > 0) {
+            await prisma.platRestaurant.createMany({
+                data: plats.map((plat) => ({
+                    id_restaurant: restaurant.id,
+                    id_plat: plat.id,
+                })),
+            });
+        }
+
         // 1) TORNS + HORARIS_TORNS
         const shifts = wizardData?.shifts ?? [];
         for (const shift of shifts) {

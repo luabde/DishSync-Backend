@@ -32,4 +32,15 @@ export class PlatService {
             throw new AppError("Error al obtenir els plats", 500);
         }
     }
+
+    static async deletePlat(id: number) {
+        try {
+            const plat = await prisma.plat.delete({
+                where: { id },
+            });
+            return plat;
+        } catch (error) {
+            throw new AppError("Error al eliminar el plat", 500);
+        }
+    }
 }

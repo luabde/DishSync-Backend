@@ -8,6 +8,6 @@ import { PlatSchema } from "../../models/plats.model";
 export const platsRouter = Router();
 
 platsRouter.post("/", authMiddleware, checkRole("ADMIN"), validate(PlatSchema), PlatController.createPlatController);
-platsRouter.get("/", authMiddleware, checkRole("ADMIN"), PlatController.getPlatsController);
+platsRouter.get("/", PlatController.getPlatsController);
 platsRouter.put("/:id", authMiddleware, checkRole("ADMIN"), validate(PlatSchema), PlatController.updatePlatController);
 platsRouter.delete("/:id", authMiddleware, checkRole("ADMIN"), PlatController.deletePlatController);

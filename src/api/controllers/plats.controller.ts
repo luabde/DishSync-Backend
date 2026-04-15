@@ -10,8 +10,14 @@ export class PlatController {
             next(error);
         }
     }
-    static getPlatsController = async (req: Request, res: Response, next: NextFunction) => {}
-    static getPlatByIdController = async (req: Request, res: Response, next: NextFunction) => {}
+    static getPlatsController = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const plats = await PlatService.getPlats();
+            res.status(200).json({ plats });
+        } catch (error) {
+            next(error);
+        }
+    }
     static updatePlatController = async (req: Request, res: Response, next: NextFunction) => {}
     static deletePlatController = async (req: Request, res: Response, next: NextFunction) => {}
 }

@@ -19,4 +19,17 @@ export class PlatService {
             throw new AppError("Error al crear el plat", 500);
         }
     }
+
+    static async getPlats() {
+        try {
+            const plats = await prisma.plat.findMany({
+                include: {
+                    categoria: true, // Para que devuelva la categoria del plat
+                },
+            });
+            return plats;
+        } catch (error) {
+            throw new AppError("Error al obtenir els plats", 500);
+        }
+    }
 }

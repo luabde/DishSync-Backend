@@ -3,6 +3,7 @@ import { authRouter } from "./auth";
 import { restaurantRouter } from "./restaurant.routes";
 import { taulesRouter } from "./taules.routes";
 import { usuariRouter } from "./usuari.routes";
+import { platsRouter } from "./plats.routes";
 
 export const router = Router();
 
@@ -17,3 +18,4 @@ router.use("/auth", authRouter);
 router.use("/restaurants", restaurantRouter);
 router.use("/taules", taulesRouter);
 router.use("/usuaris", usuariRouter);
+router.use("/plats", platsRouter);

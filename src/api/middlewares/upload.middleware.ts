@@ -9,3 +9,4 @@ const upload = multer({
 
 // Campo esperado desde frontend: "image"
 export const uploadRestaurantImage = upload.single("image");
+export const uploadDishImage = upload.single("image");

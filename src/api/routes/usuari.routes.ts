@@ -9,6 +9,7 @@ export const usuariRouter = Router();
 usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUsersForAssignment);
 
 usuariRouter.get("/allUsers", authMiddleware, checkRole("ADMIN"), UsuariController.getAllUsers);
+usuariRouter.get("/contactes", authMiddleware, checkRole("ADMIN"), UsuariController.getAllContactForms);
 // Rutas de validación de unicidad usadas por frontend antes de guardar.
 usuariRouter.get("/validate-email", authMiddleware, checkRole("ADMIN"), UsuariController.validateEmailExists);
 usuariRouter.get("/validate-username", authMiddleware, checkRole("ADMIN"), UsuariController.validateUsernameExists);

@@ -371,6 +371,107 @@ async function main() {
 
     console.log(`Plats creados/actualizados correctamente: ${dishesSeed.length}.`);
 
+    const clientsSeed = [
+      {
+        nom: "Marta",
+        cognoms: "Serra Puig",
+        email: "marta.serra@gmail.com",
+        telefon: "600111222",
+      },
+      {
+        nom: "Jordi",
+        cognoms: "Vila Costa",
+        email: "jordi.vila@gmail.com",
+        telefon: "600333444",
+      },
+      {
+        nom: "Laia",
+        cognoms: "Roca Soler",
+        email: "laia.roca@gmail.com",
+        telefon: "600555666",
+      },
+    ];
+
+    for (const client of clientsSeed) {
+      await prisma.client.upsert({
+        where: { email: client.email },
+        update: {
+          nom: client.nom,
+          cognoms: client.cognoms,
+          telefon: client.telefon,
+        },
+        create: client,
+      });
+    }
+
+    const clients = await prisma.client.findMany({
+      where: {
+        email: {
+          in: clientsSeed.map((client) => client.email),
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    const clientIdByEmail = new Map(
+      clients.map((client) => [client.email, client.id]),
+    );
+
+    const contactsSeed = [
+      {
+        clientEmail: "marta.serra@gmail.com",
+        missatge: "Hola! Voldria saber si teniu opcions sense gluten al menú.",
+        estat: "Pendent",
+      },
+      {
+        clientEmail: "jordi.vila@gmail.com",
+        missatge: "Bon dia, he tingut un problema amb una reserva i necessito ajuda.",
+        estat: "Llegit",
+      },
+      {
+        clientEmail: "laia.roca@gmail.com",
+        missatge: "Es pot reservar taula a la terrassa per aquest dissabte?",
+        estat: "Pendent",
+      },
+      {
+        clientEmail: "marta.serra@gmail.com",
+        missatge: "Teniu menú infantil disponible cada dia?",
+        estat: "Llegit",
+      },
+    ];
+
+    for (const contact of contactsSeed) {
+      const clientId = clientIdByEmail.get(contact.clientEmail);
+      if (!clientId) continue;
+
+      const existingContact = await prisma.contacteClient.findFirst({
+        where: {
+          id_client: clientId,
+          missatge: contact.missatge,
+        },
+      });
+
+      if (existingContact) {
+        await prisma.contacteClient.update({
+          where: { id: existingContact.id },
+          data: { estat: contact.estat },
+        });
+      } else {
+        await prisma.contacteClient.create({
+          data: {
+            id_client: clientId,
+            missatge: contact.missatge,
+            estat: contact.estat,
+          },
+        });
+      }
+    }
+
+    console.log(`Contactes creados/actualizados correctamente: ${contactsSeed.length}.`);
+
     // Limpiar datos previos para evitar duplicados si es necesario
     // await prisma.taula.deleteMany(); 
     

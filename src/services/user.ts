@@ -199,6 +199,34 @@ export class UserService {
         });
     }
 
+    // Formularios de contacto con el email del cliente para panel admin.
+    static async getAllContactForms() {
+        const contactForms = await prisma.contacteClient.findMany({
+            select: {
+                id: true,
+                missatge: true,
+                estat: true,
+                createdAt: true,
+                client: {
+                    select: {
+                        email: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        return contactForms.map((item) => ({
+            id: item.id,
+            email: item.client.email,
+            missatge: item.missatge,
+            estat: item.estat,
+            createdAt: item.createdAt,
+        }));
+    }
+
     static async modifyUser(userId: number, data: UserDTO) {
         const user = await prisma.usuari.findUnique({
             where: { id: userId },

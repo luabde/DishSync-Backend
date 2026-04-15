@@ -22,6 +22,16 @@ export class UsuariController {
     }
   };
 
+  // Listado de mensajes de contacto para gestión en frontend.
+  static getAllContactForms = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const contactForms = await UserService.getAllContactForms();
+      res.status(200).json(contactForms);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Modificación de usuario desde la edición inline de la tabla.
   static modifyUser = async (req: Request, res: Response, next: NextFunction) => {
     try {

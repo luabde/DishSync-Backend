@@ -125,6 +125,7 @@ export class PlatService {
                 data: {
                     nom: data.nom,
                     descripcio: data.descripcio,
+                    preu: data.preu,
                     id_categoria: data.id_categoria,
                     url: nextUrl,
                 },

@@ -11,9 +11,9 @@ type PlatWithFileRequest = Request & {
 };
 
 export class PlatController {
-    static createPlatController = async (req: Request, res: Response, next: NextFunction) => {
+    static createPlatController = async (req: PlatWithFileRequest, res: Response, next: NextFunction) => {
         try {
-            const plat = await PlatService.createPlat(req.body);
+            const plat = await PlatService.createPlat(req.body, req.file);
             res.status(201).json({ message: "Plat creado correctamente", plat });
         } catch (error) {
             next(error);
@@ -23,6 +23,22 @@ export class PlatController {
         try {
             const plats = await PlatService.getPlats();
             res.status(200).json({ plats });
+        } catch (error) {
+            next(error);
+        }
+    }
+    static getCategoriesController = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const categories = await PlatService.getCategories();
+            res.status(200).json({ categories });
+        } catch (error) {
+            next(error);
+        }
+    }
+    static createCategoryController = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const category = await PlatService.createCategory(req.body);
+            res.status(201).json({ message: "Categoria creada correctamente", category });
         } catch (error) {
             next(error);
         }

@@ -1,6 +1,6 @@
 import path from "path";
 import { mkdir, unlink, writeFile } from "fs/promises";
-import { PlatDTO, UpdatePlatDTO } from "../models/plats.model";
+import { CategoriaDTO, PlatDTO, UpdatePlatDTO } from "../models/plats.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
 
@@ -30,14 +30,16 @@ export class PlatService {
         }
     }
 
-    static async createPlat(data: PlatDTO) {
+    static async createPlat(data: PlatDTO, imageFile?: { originalname: string; buffer: Buffer }) {
         try {
+            // Si llega una imagen, se guarda en local y se prioriza esa URL.
+            const imageUrl = imageFile ? await this.saveDishImage(imageFile) : data.url;
             const plat = await prisma.plat.create({
                 data: {
                     nom: data.nom,
                     descripcio: data.descripcio,
                     preu: data.preu,
-                    url: data.url,
+                    url: imageUrl,
                     id_categoria: data.id_categoria
                 }
             });
@@ -57,6 +59,29 @@ export class PlatService {
             return plats;
         } catch (error) {
             throw new AppError("Error al obtenir els plats", 500);
+        }
+    }
+
+    static async getCategories() {
+        try {
+            return await prisma.categoria.findMany({
+                orderBy: { nom: "asc" },
+            });
+        } catch (error) {
+            throw new AppError("Error al obtenir les categories", 500);
+        }
+    }
+
+    static async createCategory(data: CategoriaDTO) {
+        try {
+            return await prisma.categoria.create({
+                data: {
+                    nom: data.nom,
+                    descripcio: data.descripcio || null,
+                },
+            });
+        } catch (error) {
+            throw new AppError("Error al crear la categoria", 500);
         }
     }
 

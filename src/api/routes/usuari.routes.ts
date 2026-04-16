@@ -10,6 +10,7 @@ usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUs
 
 usuariRouter.get("/allUsers", authMiddleware, checkRole("ADMIN"), UsuariController.getAllUsers);
 usuariRouter.get("/contactes", authMiddleware, checkRole("ADMIN"), UsuariController.getAllContactForms);
+usuariRouter.patch("/contactes/:contactId/read", authMiddleware, checkRole("ADMIN"), UsuariController.markContactAsRead);
 // Rutas de validación de unicidad usadas por frontend antes de guardar.
 usuariRouter.get("/validate-email", authMiddleware, checkRole("ADMIN"), UsuariController.validateEmailExists);
 usuariRouter.get("/validate-username", authMiddleware, checkRole("ADMIN"), UsuariController.validateUsernameExists);

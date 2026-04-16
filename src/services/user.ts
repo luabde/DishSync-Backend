@@ -227,6 +227,35 @@ export class UserService {
         }));
     }
 
+    static async markContactFormAsRead(contactId: number) {
+        const contactForm = await prisma.contacteClient.findUnique({
+            where: { id: contactId },
+            select: {
+                id: true,
+                estat: true,
+            },
+        });
+
+        if (!contactForm) {
+            throw new AppError("Mensaje de contacto no encontrado", 404);
+        }
+
+        if (contactForm.estat === "Llegit") {
+            return { id: contactForm.id, estat: contactForm.estat };
+        }
+
+        const updatedContact = await prisma.contacteClient.update({
+            where: { id: contactId },
+            data: { estat: "Llegit" },
+            select: {
+                id: true,
+                estat: true,
+            },
+        });
+
+        return updatedContact;
+    }
+
     static async modifyUser(userId: number, data: UserDTO) {
         const user = await prisma.usuari.findUnique({
             where: { id: userId },

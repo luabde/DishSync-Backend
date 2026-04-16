@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { UserService } from "../../services/user";
+import { AppError } from "../../utils/AppError";
 
 export class UsuariController {
   // Catálogo de usuarios sin restaurante asignado (wizard de alta de restaurante).
@@ -27,6 +28,21 @@ export class UsuariController {
     try {
       const contactForms = await UserService.getAllContactForms();
       res.status(200).json(contactForms);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Marca un mensaje de contacto como leído desde el panel de notificaciones.
+  static markContactAsRead = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const contactId = Number.parseInt(req.params.contactId as string, 10);
+      if (Number.isNaN(contactId)) {
+        throw new AppError("ID de contacto inválido", 400);
+      }
+
+      const updatedContact = await UserService.markContactFormAsRead(contactId);
+      res.status(200).json(updatedContact);
     } catch (error) {
       next(error);
     }

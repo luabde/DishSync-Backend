@@ -240,6 +240,7 @@ export class RestaurantService {
             select: {
                 id: true,
                 nom: true,
+                direccio: true,
                 url: true,
                 estat: true,
                 _count: {
@@ -280,6 +281,7 @@ export class RestaurantService {
                 return{
                     id: restaurant.id,
                     nom: restaurant.nom,
+                    direccio: restaurant.direccio,
                     url: restaurant.url,
                     estat: restaurant.estat,
                     taules: restaurant._count.taules_restaurant,

@@ -67,6 +67,15 @@ export class RestaurantController {
     }
   };
 
+  static getRestaurantsDashboard = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const restaurants = await RestaurantService.getRestaurantsDashboard();
+      res.status(200).json(restaurants);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   static deleteRestaurant = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;

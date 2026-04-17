@@ -177,6 +177,136 @@ export class RestaurantService {
         return restaurants;
     }
 
+    static async getRestaurantsDashboard() {
+        try{
+            // Obtener numero de restaurantes activos (global)
+            const restaurantsActivos = await prisma.restaurant.count({
+                where: {
+                    estat: "ACTIU",
+                },
+            });
+    
+            // Obtener numero de restarurantes inactivos (global)
+            const restaurantsInactivos = await prisma.restaurant.count({
+                where: {
+                    estat: "INACTIU",
+                },
+            });
+    
+            // Obtener numero de usuarios (staff) (global)
+            const usuarios = await prisma.usuari.count();
+    
+            // Obtener numero de reservas (hoy) (global)
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+    
+            const mañana = new Date(hoy);
+            mañana.setDate(hoy.getDate() + 1);
+    
+            const reservasHoy = await prisma.reserva.count({
+                where: {
+                    data: {
+                        gte: hoy, // Grather than or equal --> Mayor o igual que hoy
+                        lt: mañana, // Less than --> Menor que mañana
+                        // La combinacion de ambas hace una funcion similar al BETWEEN en SQL
+                    },
+                },
+            });
+    
+            // Obtener numero de reservas semana (global)
+            const finSemana = new Date(hoy);
+            finSemana.setDate(finSemana.getDate() + 7);
+
+            const reservasSemana = await prisma.reserva.count({
+                where:{
+                    data: {
+                        gte: hoy,
+                        lt: finSemana,
+                    }
+                }
+            });
+
+
+            /*
+                De cada restaurante, obtenemos:
+                - Numero de mesas
+                - Numero de usuarios asignados
+                - Numero de reservas (hoy)
+                - Zonas
+                - Platos disponibles
+                - Platos no disponibles
+            */
+           const restaurants = await prisma.restaurant.findMany({
+            select: {
+                id: true,
+                nom: true,
+                url: true,
+                estat: true,
+                _count: {
+                    select: {
+                        taules_restaurant: true,
+                        usuaris: true,
+                        zones: true,
+                    },
+                },
+            },
+           });
+
+           const restaurantsDashboard = await Promise.all(
+            restaurants.map(async restaurant => {
+                const reservasHoy = await prisma.reserva.count({
+                    where: {
+                        id_restaurant: restaurant.id,
+                        data: {
+                            gte: hoy,
+                            lt: mañana,
+                        },
+                    },
+                });
+                const platsDisp = await prisma.platRestaurant.count({
+                    where: {
+                        id_restaurant: restaurant.id,
+                        disponibilitat: true,
+                      },
+                });
+
+                const platsNoDisp = await prisma.platRestaurant.count({
+                    where: {
+                        id_restaurant: restaurant.id,
+                        disponibilitat: false,
+                    },
+                });
+
+                return{
+                    id: restaurant.id,
+                    nom: restaurant.nom,
+                    url: restaurant.url,
+                    estat: restaurant.estat,
+                    taules: restaurant._count.taules_restaurant,
+                    usuaris: restaurant._count.usuaris,
+                    reservesHoy: reservasHoy,
+                    zones: restaurant._count.zones,
+                    platsDisp: platsDisp,
+                    platsNoDisp: platsNoDisp,
+                }
+           }));
+
+           return {
+            restaurantsActivos,
+            restaurantsInactivos,
+            usuarios,
+            reservasHoy,
+            reservasSemana,
+            restaurantsDashboard,
+          };
+
+        }catch(error){
+            throw new AppError("Error al obtener el dashboard", 500);
+        }
+
+        
+    }
+
     static async deleteRestaurant(id: number) {
         // Normaliza a inicio de día para considerar "hoy y futuro" de forma estable.
         const today = new Date();

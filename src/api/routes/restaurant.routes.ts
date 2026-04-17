@@ -38,6 +38,7 @@ restaurantRouter.get("/validate-address", authMiddleware, checkRole("ADMIN"), Re
 
 // Ruta per obtenir la llista de restaurants
 restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants);
+restaurantRouter.get("/dashboard", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurantsDashboard);
 
 restaurantRouter.delete("/:id", authMiddleware, checkRole("ADMIN"), RestaurantController.deleteRestaurant);
 

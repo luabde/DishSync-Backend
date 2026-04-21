@@ -1,4 +1,5 @@
 import { UserDTO } from "../models/user";
+import { ContacteClientDTO } from "../models/contacte.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
 
@@ -197,6 +198,42 @@ export class UserService {
                 }
             }
         });
+    }
+
+    // Alta de mensaje desde formulario público de contacto.
+    // Si el cliente ya existe (email único), reutilizamos su registro.
+    static async createContactForm(data: ContacteClientDTO) {
+        const contactForm = await prisma.$transaction(async (tx) => {
+            const client = await tx.client.upsert({
+                where: { email: data.email },
+                update: {
+                    nom: data.nom,
+                    cognoms: data.cognoms,
+                    telefon: data.telefon,
+                },
+                create: {
+                    nom: data.nom,
+                    cognoms: data.cognoms,
+                    email: data.email,
+                    telefon: data.telefon,
+                },
+                select: { id: true },
+            });
+
+            return tx.contacteClient.create({
+                data: {
+                    id_client: client.id,
+                    missatge: data.missatge,
+                },
+                select: {
+                    id: true,
+                    estat: true,
+                    createdAt: true,
+                },
+            });
+        });
+
+        return contactForm;
     }
 
     // Formularios de contacto con el email del cliente para panel admin.

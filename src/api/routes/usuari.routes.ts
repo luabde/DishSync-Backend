@@ -2,8 +2,13 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { checkRole } from "../middlewares/role.middleware";
 import { UsuariController } from "../controllers/usuari.controller";
+import { validate } from "../middlewares/validate.middleware";
+import { ContacteClientSchema } from "../../models/contacte.model";
 
 export const usuariRouter = Router();
+
+// Formulario de contacto público (sin autenticación).
+usuariRouter.post("/contactes", validate(ContacteClientSchema), UsuariController.createContactForm);
 
 // Catálogo de usuarios para asignarlos al nuevo restaurante en el wizard.
 usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUsersForAssignment);

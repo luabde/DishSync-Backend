@@ -48,6 +48,19 @@ export class UsuariController {
     }
   };
 
+  // Alta de formulario de contacto desde la web pública.
+  static createContactForm = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const contactForm = await UserService.createContactForm(req.body);
+      res.status(201).json({
+        message: "Mensaje de contacto enviado correctamente",
+        contactForm,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Modificación de usuario desde la edición inline de la tabla.
   static modifyUser = async (req: Request, res: Response, next: NextFunction) => {
     try {

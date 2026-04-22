@@ -36,7 +36,10 @@ restaurantRouter.post(
 restaurantRouter.get("/validate-name", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantExists);
 restaurantRouter.get("/validate-address", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantDirectionExists);
 
-// Ruta per obtenir la llista de restaurants
+// Ruta pública para el mapa de "Encuéntranos" en frontend.
+// No requiere auth porque se consume desde la web pública.
+restaurantRouter.get("/locations", RestaurantController.getRestaurantLocations);
+// Ruta interna de administración (dashboard/backoffice).
 restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants);
 restaurantRouter.get("/dashboard", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurantsDashboard);
 

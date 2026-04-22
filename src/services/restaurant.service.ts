@@ -3,6 +3,7 @@ import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
 import path from "path";
 import { mkdir, unlink, writeFile } from "fs/promises";
+import { geocodeAddress } from "../utils/geocoding.util";
 
 export class RestaurantService {
     private static async saveRestaurantImage(imageFile: { originalname: string; buffer: Buffer }) {
@@ -49,6 +50,8 @@ export class RestaurantService {
                 tablesByZone?: Record<string, { id: string; tableTypeId: number; x: number; y: number }[]>;
             };
         };
+        // Geocodificamos la dirección para persistir coordenadas y poder pintarla en el mapa.
+        const geocodedLocation = await geocodeAddress(restaurantData.direccio);
 
         if (imageFile) {
             // URL accesible desde frontend gracias a express.static
@@ -59,6 +62,9 @@ export class RestaurantService {
         const restaurant = await prisma.restaurant.create({
             data: {
                 ...restaurantData,
+                // Si no hay coordenadas, se guarda null y el restaurante no se mostrará en /locations.
+                lat: geocodedLocation?.lat,
+                lng: geocodedLocation?.lng,
                 url: imageUrl,
             },
         });
@@ -175,6 +181,27 @@ export class RestaurantService {
     static async getRestaurants() {
         const restaurants = await prisma.restaurant.findMany();
         return restaurants;
+    }
+
+    static async getRestaurantLocations() {
+        // Endpoint consumido por frontend (Leaflet): solo restaurantes activos geolocalizados.
+        return prisma.restaurant.findMany({
+            where: {
+                lat: { not: null },
+                lng: { not: null },
+                estat: "ACTIU",
+            },
+            select: {
+                id: true,
+                nom: true,
+                direccio: true,
+                lat: true,
+                lng: true,
+            },
+            orderBy: {
+                nom: "asc",
+            },
+        });
     }
 
     static async getRestaurantsDashboard() {
@@ -358,6 +385,10 @@ export class RestaurantService {
         // Protección adicional: si alguien manda `horaris` manualmente,
         // no lo usamos en update.
         const { horaris: _ignoredHoraris, ...safeData } = data as UpdateRestaurantDTO & { horaris?: string };
+        // Solo recalculamos coordenadas si cambia la dirección.
+        // Si la dirección no cambia, conservamos lat/lng actuales para evitar llamadas innecesarias.
+        const hasAddressChanged = safeData.direccio.trim() !== restaurant.direccio.trim();
+        const geocodedLocation = hasAddressChanged ? await geocodeAddress(safeData.direccio) : null;
 
         // 2) Base de la URL final:
         // - Si llega `data.url`, la respetamos.
@@ -381,6 +412,8 @@ export class RestaurantService {
             where: { id },
             data: {
                 ...safeData,
+                lat: hasAddressChanged ? geocodedLocation?.lat ?? null : restaurant.lat,
+                lng: hasAddressChanged ? geocodedLocation?.lng ?? null : restaurant.lng,
                 url: nextUrl,
             },
         });

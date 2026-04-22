@@ -67,6 +67,17 @@ export class RestaurantController {
     }
   };
 
+  // Endpoint público para "Encuéntranos":
+  // devuelve restaurantes activos con lat/lng listos para pintarlos en Leaflet.
+  static getRestaurantLocations = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const locations = await RestaurantService.getRestaurantLocations();
+      res.status(200).json(locations);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   static getRestaurantsDashboard = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const restaurants = await RestaurantService.getRestaurantsDashboard();

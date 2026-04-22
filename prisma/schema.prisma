@@ -37,6 +37,9 @@ model Restaurant {
   id                Int               @id @default(autoincrement())
   nom               String
   direccio          String
+  // Coordenadas para pintar el restaurante en mapas (Leaflet/OpenStreetMap).
+  lat               Float?
+  lng               Float?
   horaris           String
   telefon           String
   url               String?

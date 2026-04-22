@@ -3,6 +3,19 @@ import { UserService } from "../../services/user";
 import { AppError } from "../../utils/AppError";
 
 export class UsuariController {
+  // Alta de formulario de contacto desde web pública.
+  static createContactForm = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const contactForm = await UserService.createContactForm(req.body);
+      res.status(201).json({
+        message: "Mensaje de contacto enviado correctamente",
+        contactForm,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Catálogo de usuarios sin restaurante asignado (wizard de alta de restaurante).
   static getUsersForAssignment = async (_req: Request, res: Response, next: NextFunction) => {
     try {
@@ -43,19 +56,6 @@ export class UsuariController {
 
       const updatedContact = await UserService.markContactFormAsRead(contactId);
       res.status(200).json(updatedContact);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Alta de formulario de contacto desde la web pública.
-  static createContactForm = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const contactForm = await UserService.createContactForm(req.body);
-      res.status(201).json({
-        message: "Mensaje de contacto enviado correctamente",
-        contactForm,
-      });
     } catch (error) {
       next(error);
     }

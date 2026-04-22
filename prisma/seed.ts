@@ -31,6 +31,59 @@ async function main() {
 
     console.log("Usuario admin creado/actualizado correctamente.");
 
+    const restaurantsSeed = [
+      {
+        nom: "DishSync Barcelona Centro",
+        direccio: "Plaça de Catalunya, Barcelona",
+        lat: 41.3870,
+        lng: 2.1701,
+        horaris: "12:00-16:00, 20:00-23:30",
+        telefon: "933000111",
+        descripcio: "Restaurant demo al centre de Barcelona.",
+        estat: "ACTIU" as const,
+      },
+      {
+        nom: "DishSync Gràcia",
+        direccio: "Carrer Gran de Gràcia, Barcelona",
+        lat: 41.4017,
+        lng: 2.1530,
+        horaris: "13:00-16:00, 20:00-23:00",
+        telefon: "933000222",
+        descripcio: "Restaurant demo al barri de Gràcia.",
+        estat: "ACTIU" as const,
+      },
+      {
+        nom: "DishSync València",
+        direccio: "Plaça de l'Ajuntament, València",
+        lat: 39.4699,
+        lng: -0.3763,
+        horaris: "13:00-16:30, 20:30-23:30",
+        telefon: "963000333",
+        descripcio: "Restaurant demo al centre de València.",
+        estat: "ACTIU" as const,
+      },
+    ];
+
+    for (const restaurant of restaurantsSeed) {
+      const existingRestaurant = await prisma.restaurant.findFirst({
+        where: { nom: restaurant.nom },
+        select: { id: true },
+      });
+
+      if (existingRestaurant) {
+        await prisma.restaurant.update({
+          where: { id: existingRestaurant.id },
+          data: restaurant,
+        });
+      } else {
+        await prisma.restaurant.create({
+          data: restaurant,
+        });
+      }
+    }
+
+    console.log(`Restaurantes creados/actualizados correctamente: ${restaurantsSeed.length}.`);
+
     const categoriesSeed = [
       {
         nom: "Entrants",

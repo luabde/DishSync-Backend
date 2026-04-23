@@ -134,4 +134,16 @@ export class RestaurantController {
       next(error);
     }
   };
+
+  static getTaules = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      // Flujo esperado: POST con body { data, torn, hora, zona }.
+      const data = req.body;
+      const taules = await RestaurantService.getTaules(Number(restaurantId), data);
+      res.status(200).json(taules);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

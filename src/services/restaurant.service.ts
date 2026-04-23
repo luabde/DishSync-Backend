@@ -457,4 +457,73 @@ export class RestaurantService {
         }
     }
 
+    static async getTaules(restaurantId: number, data: any) {
+        try{
+            let zona_seleccionada_id: number | null = null;
+
+            if(data.zona === null) {
+                // Si no llega zona, tomamos solo la primera zona del restaurante.
+                const zona_seleccionada = await prisma.zona.findFirst({
+                    where: { id_restaurant: restaurantId },
+                    orderBy: { id: "asc" },
+                });
+                zona_seleccionada_id = zona_seleccionada?.id ?? null;
+            }else{
+                zona_seleccionada_id = Number(data.zona);
+            }
+
+            if (!zona_seleccionada_id) return [];
+
+            /**
+             * Devuelve TODAS las mesas físicas de la zona seleccionada (TAULES_RESTAURANT + TAULES),
+             * y hace LEFT JOIN con RESERVES para el turno, hora y la fecha indicados.
+             *
+             * Interpretación de resultado:
+             * - num_persones_reserva/estat_reserva = null -> mesa sin reserva activa ese día/turno.
+             * - estat_reserva en PENDENT/RESERVADA/OCUPADA -> mesa con reserva activa
+             *   (útil para pintar estado por colores en frontend).
+             */
+            const totes_taules = await prisma.$queryRaw<
+                Array<{
+                    id: number;
+                    num_persones_taula: number;
+                    fila: number;
+                    columna: number;
+                    span_fila: number;
+                    span_columna: number;
+                    num_persones_reserva: number | null;
+                    estat_reserva: string | null;
+                }>
+            >`
+                SELECT
+                    tr.id,
+                    t.num_persones AS num_persones_taula,
+                    tr.fila,
+                    tr.columna,
+                    t.span_fila,
+                    t.span_columna,
+                    r.num_persones AS num_persones_reserva,
+                    r.estat AS estat_reserva
+                FROM "TAULES_RESTAURANT" tr
+                JOIN "TAULES" t
+                    ON t.id = tr.id_taula
+                JOIN "TORNS" torn
+                    ON torn.id_restaurant = ${restaurantId}
+                    AND torn.nom = ${data.torn}
+                LEFT JOIN "RESERVES" r
+                    ON r.id_taula_restaurant = tr.id
+                    AND r.id_torn = torn.id
+                    AND r.hora = ${data.hora}
+                    AND CAST(r.data AS DATE) = CAST(${data.data} AS DATE)
+                    AND r.estat IN ('PENDENT', 'RESERVADA', 'OCUPADA')
+                WHERE tr.id_restaurant = ${restaurantId}
+                  AND tr.id_zona = ${zona_seleccionada_id}
+            `;
+
+            return totes_taules;
+        }catch(error){
+            throw new AppError("Error al obtener las mesas", 500);
+        }
+    }
+
 }

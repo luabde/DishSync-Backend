@@ -61,4 +61,5 @@ restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), Re
 
 
 // ---- RUTAS FORM RESERVAS ----
-restaurantRouter.get("/reservationsForm/:restaurantId", authMiddleware, checkRole("ADMIN"), RestaurantController.getReservationsForm);
+restaurantRouter.get("/reservationsForm/:restaurantId", RestaurantController.getReservationsForm);
+restaurantRouter.post("/reservationsForm/:restaurantId/getTaules", RestaurantController.getTaules);

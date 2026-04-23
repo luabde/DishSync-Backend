@@ -32,6 +32,9 @@ restaurantRouter.post(
   RestaurantController.createRestaurant
 );
 
+// ---- RUTAS CRUD RESTAURANT ----
+
+// RUTAS GET
 // Rutas de validación por query params para soportar textos libres (ej: "C/ Major, 12").
 restaurantRouter.get("/validate-name", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantExists);
 restaurantRouter.get("/validate-address", authMiddleware, checkRole("ADMIN"), RestaurantController.validateRestaurantDirectionExists);
@@ -43,11 +46,19 @@ restaurantRouter.get("/locations", RestaurantController.getRestaurantLocations);
 restaurantRouter.get("/", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurants);
 restaurantRouter.get("/dashboard", authMiddleware, checkRole("ADMIN"), RestaurantController.getRestaurantsDashboard);
 
+
+// RUTAS DELETE
 restaurantRouter.delete("/:id", authMiddleware, checkRole("ADMIN"), RestaurantController.deleteRestaurant);
 
+// RUTAS PUT
 // Ruta per actualizar la información del restaurante
 restaurantRouter.put("/:id", authMiddleware, checkRole("ADMIN"), uploadRestaurantImage, parseWizardData, validate(UpdateRestaurantSchema), RestaurantController.updateRestaurant);
 
+// RUTAS PATCH
 // Acción alternativa para bloquear operativa sin borrar histórico.
 // Patch sirve para actualizar parcialmente un recurso, es decir, solo se actualiza lo que se le pasa.
 restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), RestaurantController.deactivateRestaurant);
+
+
+// ---- RUTAS FORM RESERVAS ----
+restaurantRouter.get("/reservationsForm/:restaurantId", authMiddleware, checkRole("ADMIN"), RestaurantController.getReservationsForm);

@@ -12,6 +12,8 @@ type RestaurantWithFileRequest = Request & {
 };
 
 export class RestaurantController {
+
+  // ---- RUTAS CRUD RESTAURANT ----
   static createRestaurant = async (req: RestaurantWithFileRequest, res: Response, next: NextFunction) => {
     try {
       const restaurant = await RestaurantService.createRestaurant(req.body, req.file);
@@ -116,6 +118,18 @@ export class RestaurantController {
       const { id } = req.params;
       const restaurant = await RestaurantService.deactivateRestaurant(Number(id));
       res.status(200).json({ message: "Restaurante desactivado correctamente", restaurant });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+
+  // ---- RUTAS FORM RESERVAS ----
+  static getReservationsForm = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const reservations = await RestaurantService.getReservationsForm(Number(restaurantId));
+      res.status(200).json(reservations);
     } catch (error) {
       next(error);
     }

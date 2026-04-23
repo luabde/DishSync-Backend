@@ -6,6 +6,8 @@ import { mkdir, unlink, writeFile } from "fs/promises";
 import { geocodeAddress } from "../utils/geocoding.util";
 
 export class RestaurantService {
+
+    // ---- SERVICIOS PARA RUTAS CRUD RESTAURANT ----
     private static async saveRestaurantImage(imageFile: { originalname: string; buffer: Buffer }) {
         // Centraliza el guardado físico para reusar en create y update.
         const extension = path.extname(imageFile.originalname) || ".jpg";
@@ -425,6 +427,34 @@ export class RestaurantService {
             where: { id },
             data: { estat: "INACTIU" },
         });
+    }
+
+    // ---- SERVICIOS PARA RUTAS FORM RESERVAS ----
+    static async getReservationsForm(restaurantId: number) {
+        try{
+            // Objeto por nombre de turno -> lista de horas.
+            const horaris_torns: Record<string, string[]> = {};
+
+            const turnos = await prisma.torn.findMany({
+                where: { id_restaurant: restaurantId },
+            });
+
+            for (const turno of turnos) {
+                if(!horaris_torns[turno.nom]) {
+                    horaris_torns[turno.nom] = [];
+                }
+
+                const horas = await prisma.horarisTorn.findMany({
+                    where: { id_torn: turno.id },
+                });
+
+                horaris_torns[turno.nom] = horas.map((hora) => hora.hora);
+            }
+
+            return horaris_torns;
+        }catch(error){
+            throw new AppError("Error al obtener los horarios de los turnos", 500);
+        }
     }
 
 }

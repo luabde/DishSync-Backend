@@ -61,5 +61,7 @@ restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), Re
 
 
 // ---- RUTAS FORM RESERVAS ----
+// Rutas públicas para el formulario de reserva de clientes (sin autenticación).
 restaurantRouter.get("/reservationsForm/:restaurantId", RestaurantController.getReservationsForm);
 restaurantRouter.post("/reservationsForm/:restaurantId/getTaules", RestaurantController.getTaules);
+restaurantRouter.get("/reservationsForm/:restaurantId/zones", RestaurantController.getReservationZones);

@@ -146,4 +146,14 @@ export class RestaurantController {
       next(error);
     }
   }
+
+  static getReservationZones = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const zones = await RestaurantService.getReservationZones(Number(restaurantId));
+      res.status(200).json(zones);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

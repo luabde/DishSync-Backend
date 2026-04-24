@@ -487,6 +487,7 @@ export class RestaurantService {
                 Array<{
                     id: number;
                     num_persones_taula: number;
+                    min_persones_reserva: number;
                     fila: number;
                     columna: number;
                     span_fila: number;
@@ -498,6 +499,7 @@ export class RestaurantService {
                 SELECT
                     tr.id,
                     t.num_persones AS num_persones_taula,
+                    t.min_persones_reserva,
                     tr.fila,
                     tr.columna,
                     t.span_fila,
@@ -523,6 +525,18 @@ export class RestaurantService {
             return totes_taules;
         }catch(error){
             throw new AppError("Error al obtener las mesas", 500);
+        }
+    }
+
+    static async getReservationZones(restaurantId: number) {
+        try {
+            return await prisma.zona.findMany({
+                where: { id_restaurant: restaurantId },
+                select: { id: true, nom: true },
+                orderBy: { id: "asc" },
+            });
+        } catch (error) {
+            throw new AppError("Error al obtener las zonas del restaurante", 500);
         }
     }
 

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../loaders/prisma.loader";
 import { RestaurantService } from "../../services/restaurant.service";
 import { envConfig } from "../../config/env.config";
+import { AppError } from "../../utils/AppError";
 
 type RestaurantWithFileRequest = Request & {
   file?: {
@@ -175,6 +176,16 @@ export class RestaurantController {
       await RestaurantService.confirmReservationByToken(token);
       res.redirect(`${envConfig.frontend.baseUrl}/reservar/confirmada`);
     } catch (error) {
+      if (error instanceof AppError && error.statusCode === 410) {
+        return res.redirect(`${envConfig.frontend.baseUrl}/reservar/expirada`);
+      }
+      if (
+        error instanceof AppError &&
+        error.statusCode === 400 &&
+        error.message.toLowerCase().includes("cancelada")
+      ) {
+        return res.redirect(`${envConfig.frontend.baseUrl}/reservar/cancelada`);
+      }
       next(error);
     }
   };
@@ -186,6 +197,9 @@ export class RestaurantController {
       await RestaurantService.cancelReservationByToken(token);
       res.redirect(`${envConfig.frontend.baseUrl}/reservar/cancelada`);
     } catch (error) {
+      if (error instanceof AppError && error.statusCode === 410) {
+        return res.redirect(`${envConfig.frontend.baseUrl}/reservar/expirada`);
+      }
       next(error);
     }
   };

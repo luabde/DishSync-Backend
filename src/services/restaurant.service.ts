@@ -767,8 +767,12 @@ export class RestaurantService {
             });
             if (!reserva) throw new AppError("Reserva no encontrada", 404);
 
-            if (reserva.estat === "CANCELADA" || reserva.estat === "EXPIRADA") {
-                throw new AppError("La reserva ya está cancelada o expirada", 400);
+            if (reserva.estat === "CANCELADA") {
+                throw new AppError("La reserva ya está cancelada", 400);
+            }
+
+            if (reserva.estat === "EXPIRADA") {
+                throw new AppError("La reserva ya está expirada", 410);
             }
 
             if (reserva.estat === "RESERVADA") {
@@ -780,7 +784,7 @@ export class RestaurantService {
                     where: { id: reserva.id },
                     data: { estat: "EXPIRADA" },
                 });
-                throw new AppError("La reserva ha expirado", 400);
+                throw new AppError("La reserva ha expirado", 410);
             }
 
             const updatedReserva = await prisma.reserva.update({
@@ -825,7 +829,7 @@ export class RestaurantService {
             }
 
             if (reserva.estat === "EXPIRADA") {
-                return { message: "La reserva ya estaba expirada" };
+                throw new AppError("La reserva ya está expirada", 410);
             }
 
             const updatedReserva = await prisma.reserva.update({

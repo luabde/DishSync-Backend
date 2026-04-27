@@ -3,6 +3,7 @@ import { validate } from "../middlewares/validate.middleware";
 import {checkRole} from "../middlewares/role.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { RestaurantSchema, UpdateRestaurantSchema } from "../../models/restaurant.model";
+import { CreateReservationSchema } from "../../models/reservation.model";
 import { RestaurantController } from "../controllers/restaurant.controller";
 import { uploadRestaurantImage } from "../middlewares/upload.middleware";
 
@@ -65,3 +66,10 @@ restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), Re
 restaurantRouter.get("/reservationsForm/:restaurantId", RestaurantController.getReservationsForm);
 restaurantRouter.post("/reservationsForm/:restaurantId/getTaules", RestaurantController.getTaules);
 restaurantRouter.get("/reservationsForm/:restaurantId/zones", RestaurantController.getReservationZones);
+restaurantRouter.post(
+  "/reservationsForm/:restaurantId/createReservation",
+  validate(CreateReservationSchema),
+  RestaurantController.createReservation
+);
+restaurantRouter.get("/reservations/confirm/:token", RestaurantController.confirmReservationByToken);
+restaurantRouter.get("/reservations/cancel/:token", RestaurantController.cancelReservationByToken);

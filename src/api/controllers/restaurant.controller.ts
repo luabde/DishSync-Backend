@@ -145,7 +145,7 @@ export class RestaurantController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   static getReservationZones = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -155,5 +155,37 @@ export class RestaurantController {
     } catch (error) {
       next(error);
     }
-  }
+  };
+
+  static createReservation = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const reservation = await RestaurantService.createReservation(Number(restaurantId), req.body);
+      res.status(201).json(reservation);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static confirmReservationByToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tokenParam = req.params.token;
+      const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
+      const result = await RestaurantService.confirmReservationByToken(token);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static cancelReservationByToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tokenParam = req.params.token;
+      const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
+      const result = await RestaurantService.cancelReservationByToken(token);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

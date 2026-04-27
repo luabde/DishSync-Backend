@@ -24,7 +24,7 @@ enum EstatReserva {
   OCUPADA
   LLIURE
   CANCELADA
-  NO_PRESENTAT
+  EXPIRADA
 }
 
 enum RolUsuari {

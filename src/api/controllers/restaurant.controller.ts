@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../loaders/prisma.loader";
 import { RestaurantService } from "../../services/restaurant.service";
+import { envConfig } from "../../config/env.config";
 
 type RestaurantWithFileRequest = Request & {
   file?: {
@@ -171,8 +172,8 @@ export class RestaurantController {
     try {
       const tokenParam = req.params.token;
       const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
-      const result = await RestaurantService.confirmReservationByToken(token);
-      res.status(200).json(result);
+      await RestaurantService.confirmReservationByToken(token);
+      res.redirect(`${envConfig.frontend.baseUrl}/reservar/confirmada`);
     } catch (error) {
       next(error);
     }
@@ -182,8 +183,8 @@ export class RestaurantController {
     try {
       const tokenParam = req.params.token;
       const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
-      const result = await RestaurantService.cancelReservationByToken(token);
-      res.status(200).json(result);
+      await RestaurantService.cancelReservationByToken(token);
+      res.redirect(`${envConfig.frontend.baseUrl}/reservar/cancelada`);
     } catch (error) {
       next(error);
     }

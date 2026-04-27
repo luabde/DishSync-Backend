@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../loaders/prisma.loader";
 import { RestaurantService } from "../../services/restaurant.service";
+import { envConfig } from "../../config/env.config";
+import { AppError } from "../../utils/AppError";
 
 type RestaurantWithFileRequest = Request & {
   file?: {
@@ -12,6 +14,8 @@ type RestaurantWithFileRequest = Request & {
 };
 
 export class RestaurantController {
+
+  // ---- RUTAS CRUD RESTAURANT ----
   static createRestaurant = async (req: RestaurantWithFileRequest, res: Response, next: NextFunction) => {
     try {
       const restaurant = await RestaurantService.createRestaurant(req.body, req.file);
@@ -117,6 +121,85 @@ export class RestaurantController {
       const restaurant = await RestaurantService.deactivateRestaurant(Number(id));
       res.status(200).json({ message: "Restaurante desactivado correctamente", restaurant });
     } catch (error) {
+      next(error);
+    }
+  };
+
+
+  // ---- RUTAS FORM RESERVAS ----
+  static getReservationsForm = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const reservations = await RestaurantService.getReservationsForm(Number(restaurantId));
+      res.status(200).json(reservations);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getTaules = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      // Flujo esperado: POST con body { data, torn, hora, zona }.
+      const data = req.body;
+      const taules = await RestaurantService.getTaules(Number(restaurantId), data);
+      res.status(200).json(taules);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getReservationZones = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const zones = await RestaurantService.getReservationZones(Number(restaurantId));
+      res.status(200).json(zones);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static createReservation = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const reservation = await RestaurantService.createReservation(Number(restaurantId), req.body);
+      res.status(201).json(reservation);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static confirmReservationByToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tokenParam = req.params.token;
+      const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
+      await RestaurantService.confirmReservationByToken(token);
+      res.redirect(`${envConfig.frontend.baseUrl}/reservar/confirmada`);
+    } catch (error) {
+      if (error instanceof AppError && error.statusCode === 410) {
+        return res.redirect(`${envConfig.frontend.baseUrl}/reservar/expirada`);
+      }
+      if (
+        error instanceof AppError &&
+        error.statusCode === 400 &&
+        error.message.toLowerCase().includes("cancelada")
+      ) {
+        return res.redirect(`${envConfig.frontend.baseUrl}/reservar/cancelada`);
+      }
+      next(error);
+    }
+  };
+
+  static cancelReservationByToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tokenParam = req.params.token;
+      const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
+      await RestaurantService.cancelReservationByToken(token);
+      res.redirect(`${envConfig.frontend.baseUrl}/reservar/cancelada`);
+    } catch (error) {
+      if (error instanceof AppError && error.statusCode === 410) {
+        return res.redirect(`${envConfig.frontend.baseUrl}/reservar/expirada`);
+      }
       next(error);
     }
   };

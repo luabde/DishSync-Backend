@@ -508,6 +508,11 @@ export class RestaurantService {
 
     static async getTaules(restaurantId: number, data: any) {
         try{
+            const reservationDate = new Date(`${data.data}T00:00:00`);
+            if (Number.isNaN(reservationDate.getTime())) {
+                throw new AppError("Fecha de reserva inválida", 400);
+            }
+
             let zona_seleccionada_id: number | null = null;
 
             if(data.zona === null) {
@@ -565,7 +570,7 @@ export class RestaurantService {
                     ON r.id_taula_restaurant = tr.id
                     AND r.id_torn = torn.id
                     AND r.hora = ${data.hora}
-                    AND CAST(r.data AS DATE) = CAST(${data.data} AS DATE)
+                    AND r.data = ${reservationDate}
                     AND r.estat IN ('PENDENT', 'RESERVADA', 'OCUPADA')
                 WHERE tr.id_restaurant = ${restaurantId}
                   AND tr.id_zona = ${zona_seleccionada_id}

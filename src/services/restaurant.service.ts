@@ -16,6 +16,10 @@ type EmailJob =
     | { type: "CONFIRMED_RESERVATION"; payload: Parameters<typeof EmailService.sendConfirmedReservationEmail>[0] }
     | { type: "CANCELLED_RESERVATION"; payload: Parameters<typeof EmailService.sendCancelledReservationEmail>[0] };
 
+type ReservationExpiryJob = {
+    reservaId: number;
+};
+
 export class RestaurantService {
     static enqueueEmailJob(job: EmailJob): void {
         try {
@@ -51,6 +55,42 @@ export class RestaurantService {
             // No bloqueamos la operación principal (crear/confirmar/cancelar reserva)
             // por un error al encolar el email.
             console.error(`[EmailWorker] No se pudo encolar el email (${job.type}):`, err);
+        }
+    }
+
+    static enqueueReservationExpiryJob(job: ReservationExpiryJob): void {
+        try {
+            // En build: dist/services -> dist/workers/reservation-expiry.worker.js
+            const workerJsPath = path.resolve(__dirname, "../workers/reservation-expiry.worker.js");
+            // En dev: bootstrap CJS para poder ejecutar el worker TS con tsx.
+            const workerBootstrapPath = path.resolve(__dirname, "../workers/reservation-expiry.worker.bootstrap.cjs");
+            const useTsWorker = !existsSync(workerJsPath);
+
+            const worker = new Worker(
+                useTsWorker ? workerBootstrapPath : workerJsPath,
+                { workerData: job }
+            );
+
+            worker.on("message", (msg: { success: boolean; error?: string }) => {
+                if (!msg.success) {
+                    console.error(`[ExpiryWorker] Error expirando reserva (${job.reservaId}):`, msg.error);
+                } else {
+                    console.log(`[ExpiryWorker] Reserva expiración procesada (${job.reservaId})`);
+                }
+            });
+
+            worker.on("error", (err) => {
+                console.error(`[ExpiryWorker] Worker error (${job.reservaId}):`, err);
+            });
+
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    console.error(`[ExpiryWorker] Worker salió con código ${code}`);
+                }
+            });
+        } catch (err) {
+            // No bloqueamos la creación de la reserva por un error al encolar expiración.
+            console.error(`[ExpiryWorker] No se pudo encolar expiración (${job.reservaId}):`, err);
         }
     }
 
@@ -697,6 +737,11 @@ export class RestaurantService {
                     people: data.num_persones,
                     confirmUrl,
                 },
+            });
+
+            // Llamar al worker que se encarga de expirar la reserva si no se confirma en 2 minutos.
+            this.enqueueReservationExpiryJob({
+                reservaId: result.reserva.id,
             });
 
             return {

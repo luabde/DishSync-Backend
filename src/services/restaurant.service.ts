@@ -273,19 +273,22 @@ export class RestaurantService {
     }
 
     static async getRestaurantLocations() {
-        // Endpoint consumido por frontend (Leaflet): solo restaurantes activos geolocalizados.
+        // Endpoint público consumido por ClientHome:
+        // - Cards: todos los restaurantes activos (con dirección e imagen).
+        // - Mapa: frontend filtra los que tienen coordenadas válidas.
         return prisma.restaurant.findMany({
             where: {
-                lat: { not: null },
-                lng: { not: null },
                 estat: "ACTIU",
             },
             select: {
                 id: true,
                 nom: true,
                 direccio: true,
+                horaris: true,
+                url: true,
                 lat: true,
                 lng: true,
+                estat: true,
             },
             orderBy: {
                 nom: "asc",

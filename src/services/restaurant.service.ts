@@ -520,7 +520,7 @@ export class RestaurantService {
     }
 
     // ---- SERVICIOS PARA RUTAS FORM RESERVAS ----
-    static async getReservationsForm(restaurantId: number) {
+    static async getReservationsForm(restaurantId: number, selectedDate?: string) {
         try{
             const turnos = await prisma.torn.findMany({
                 where: { id_restaurant: restaurantId },
@@ -529,6 +529,20 @@ export class RestaurantService {
             });
 
             const horaris_torns: Array<{ id: number; nom: string; hores: string[] }> = [];
+            // Hora actual del servidor en minutos desde las 00:00.
+            // Se usa para comparar fácilmente con cada slot "HH:mm".
+            const now = new Date();
+            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+            // La fecha llega desde frontend como YYYY-MM-DD (query `data`).
+            // Si es válida y coincide con hoy, ocultamos horas ya pasadas.
+            const requestedDate = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
+            const shouldFilterPastHours =
+                requestedDate !== null &&
+                !Number.isNaN(requestedDate.getTime()) &&
+                requestedDate.getFullYear() === now.getFullYear() &&
+                requestedDate.getMonth() === now.getMonth() &&
+                requestedDate.getDate() === now.getDate();
 
             for (const turno of turnos) {
                 const horas = await prisma.horarisTorn.findMany({
@@ -536,14 +550,30 @@ export class RestaurantService {
                     select: { hora: true },
                     orderBy: { hora: "asc" },
                 });
+
+                // - Si la fecha seleccionada es hoy, devolvemos solo horas >= hora actual.
+                // - Si no es hoy, devolvemos todos los horarios del turno.
+                const hores = shouldFilterPastHours
+                    ? horas
+                        .map((hora) => hora.hora)
+                        .filter((hora) => {
+                            const [hoursPart, minutesPart] = hora.split(":");
+                            const hours = Number.parseInt(hoursPart ?? "", 10);
+                            const minutes = Number.parseInt(minutesPart ?? "", 10);
+                            if (Number.isNaN(hours) || Number.isNaN(minutes)) return false;
+                            return hours * 60 + minutes >= nowMinutes;
+                        })
+                    : horas.map((hora) => hora.hora);
+
                 horaris_torns.push({
                     id: turno.id,
                     nom: turno.nom,
-                    hores: horas.map((hora) => hora.hora),
+                    hores,
                 });
             }
 
-            return horaris_torns;
+            // Si para "hoy" un turno se queda sin horas válidas, no lo mostramos.
+            return horaris_torns.filter((turno) => turno.hores.length > 0);
         }catch(error){
             throw new AppError("Error al obtener los horarios de los turnos", 500);
         }

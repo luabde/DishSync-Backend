@@ -54,7 +54,6 @@ export class PlatService {
             const plats = await prisma.plat.findMany({
                 include: {
                     categoria: true,
-                    disponible_en: true,
                 },
             });
             return plats;

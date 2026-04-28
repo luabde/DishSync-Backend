@@ -27,6 +27,14 @@ export class PlatController {
             next(error);
         }
     }
+    static getRestaurantsMenuAvailabilityController = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const restaurants = await PlatService.getRestaurantsMenuAvailability();
+            res.status(200).json({ restaurants });
+        } catch (error) {
+            next(error);
+        }
+    }
     static getCategoriesController = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const categories = await PlatService.getCategories();

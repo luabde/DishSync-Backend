@@ -63,6 +63,48 @@ export class PlatService {
         }
     }
 
+    static async getRestaurantsMenuAvailability() {
+        try {
+            const restaurants = await prisma.restaurant.findMany({
+                where: {
+                    estat: "ACTIU",
+                },
+                select: {
+                    id: true,
+                    nom: true,
+                    direccio: true,
+                    plats: {
+                        select: {
+                            disponibilitat: true,
+                            id_restaurant: true,
+                            plat: {
+                                include: {
+                                    categoria: true,
+                                },
+                            },
+                        },
+                    },
+                },
+                orderBy: {
+                    nom: "asc",
+                },
+            });
+
+            return restaurants.map((restaurant) => ({
+                id: restaurant.id,
+                nom: restaurant.nom,
+                direccio: restaurant.direccio,
+                plats: restaurant.plats.map((entry) => ({
+                    ...entry.plat,
+                    disponibilitat: entry.disponibilitat,
+                    id_restaurant: entry.id_restaurant,
+                })),
+            }));
+        } catch (error) {
+            throw new AppError("Error al obtenir els plats per restaurant", 500);
+        }
+    }
+
     static async getCategories() {
         try {
             return await prisma.categoria.findMany({

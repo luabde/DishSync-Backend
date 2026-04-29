@@ -3,6 +3,22 @@ import { UserService } from "../../services/user";
 import { AppError } from "../../utils/AppError";
 
 export class UsuariController {
+  // Devuelve el restaurante asociado al usuario autenticado (cambrer/responsable).
+  static getMyAssignedRestaurant = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authUser = req.body?.authUser as { userId?: number } | undefined;
+      const userId = authUser?.userId;
+      if (!userId) {
+        throw new AppError("No autenticado", 401);
+      }
+
+      const assignedRestaurant = await UserService.getAssignedRestaurantByUserId(userId);
+      res.status(200).json(assignedRestaurant);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Alta de formulario de contacto desde web pública.
   static createContactForm = async (req: Request, res: Response, next: NextFunction) => {
     try {

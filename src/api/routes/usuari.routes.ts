@@ -12,6 +12,7 @@ usuariRouter.post("/contactes", validate(ContacteClientSchema), UsuariController
 
 // Catálogo de usuarios para asignarlos al nuevo restaurante en el wizard.
 usuariRouter.get("/", authMiddleware, checkRole("ADMIN"), UsuariController.getUsersForAssignment);
+usuariRouter.get("/me/restaurant", authMiddleware, checkRole("RESPONSABLE", "CAMBRER"), UsuariController.getMyAssignedRestaurant);
 
 usuariRouter.get("/allUsers", authMiddleware, checkRole("ADMIN"), UsuariController.getAllUsers);
 usuariRouter.get("/contactes", authMiddleware, checkRole("ADMIN"), UsuariController.getAllContactForms);

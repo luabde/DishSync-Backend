@@ -43,6 +43,26 @@ export class PlatController {
             next(error);
         }
     }
+    static updatePlatAvailabilityController = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const rawRestaurantId = Array.isArray(req.params.restaurantId)
+                ? req.params.restaurantId[0]
+                : req.params.restaurantId;
+            const rawPlatId = Array.isArray(req.params.platId) ? req.params.platId[0] : req.params.platId;
+            const restaurantId = Number.parseInt(rawRestaurantId, 10);
+            const platId = Number.parseInt(rawPlatId, 10);
+
+            if (Number.isNaN(restaurantId) || Number.isNaN(platId)) {
+                res.status(400).json({ message: "IDs de restaurant o plat invàlids" });
+                return;
+            }
+
+            const updated = await PlatService.updatePlatAvailability(restaurantId, platId, req.body);
+            res.status(200).json({ message: "Disponibilitat actualitzada correctament", platRestaurant: updated });
+        } catch (error) {
+            next(error);
+        }
+    }
     static createCategoryController = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const category = await PlatService.createCategory(req.body);

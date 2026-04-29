@@ -21,8 +21,18 @@ const baseEmailStyles = `
   .btn { display:inline-block; padding:12px 18px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
   .btn-primary { background:#4a0e0e; color:#fff; }
   .btn-outline { border:2px solid #4a0e0e; color:#4a0e0e; background:#fff; }
+  a, a:link, a:visited, a:hover, a:active { color:inherit; text-decoration:none; }
   .footer { background:#4a0e0e; color:#f9f7f2; text-align:center; padding:18px 20px; font-size:12px; opacity:0.9; }
 `;
+
+// En clientes de correo (especialmente Gmail/Outlook), el color de enlaces puede forzarse a azul.
+// Por eso aplicamos estilos inline "fuertes" además de las clases CSS.
+const buttonInlineStyles = {
+  primary:
+    "display:inline-block;padding:12px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:#4a0e0e;color:#ffffff !important;-webkit-text-fill-color:#ffffff;border:2px solid #4a0e0e;",
+  outline:
+    "display:inline-block;padding:12px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:#ffffff;color:#4a0e0e !important;-webkit-text-fill-color:#4a0e0e;border:2px solid #4a0e0e;",
+};
 
 const wrapEmail = (content: string) => `
 <!doctype html>
@@ -100,7 +110,7 @@ export class EmailService {
       </div>
       <p class="text">Para completar la reserva, confirma en menos de 2 minutos.</p>
       <div class="actions">
-        <a class="btn btn-primary" href="${payload.confirmUrl}">Confirmar reserva</a>
+        <a class="btn btn-primary" style="${buttonInlineStyles.primary}" href="${payload.confirmUrl}">Confirmar reserva</a>
       </div>
     `);
 
@@ -130,7 +140,7 @@ export class EmailService {
         <p><strong>Personas:</strong> ${payload.people}</p>
       </div>
       <div class="actions">
-        <a class="btn btn-outline" href="${payload.cancelUrl}">Cancelar reserva</a>
+        <a class="btn btn-outline" style="${buttonInlineStyles.outline}" href="${payload.cancelUrl}">Cancelar reserva</a>
       </div>
     `);
 

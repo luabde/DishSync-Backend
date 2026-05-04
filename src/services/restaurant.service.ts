@@ -284,6 +284,7 @@ export class RestaurantService {
                 id: true,
                 nom: true,
                 direccio: true,
+                descripcio: true,
                 horaris: true,
                 url: true,
                 lat: true,

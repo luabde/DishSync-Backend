@@ -200,6 +200,33 @@ export class UserService {
         });
     }
 
+    // Obtiene el restaurante asignado al usuario autenticado (cambrer/responsable).
+    static async getAssignedRestaurantByUserId(userId: number) {
+        const user = await prisma.usuari.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                id_restaurant: true,
+                restaurant: {
+                    select: {
+                        id: true,
+                        nom: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            throw new AppError("Usuario no encontrado", 404);
+        }
+
+        return {
+            userId: user.id,
+            id_restaurant: user.id_restaurant,
+            restaurant: user.restaurant,
+        };
+    }
+
     // Alta de mensaje desde formulario público de contacto.
     // Si el cliente ya existe (email único), reutilizamos su registro.
     static async createContactForm(data: ContacteClientDTO) {

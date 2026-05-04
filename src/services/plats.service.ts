@@ -1,6 +1,6 @@
 import path from "path";
 import { mkdir, unlink, writeFile } from "fs/promises";
-import { CategoriaDTO, PlatDTO, UpdatePlatDTO } from "../models/plats.model";
+import { CategoriaDTO, PlatDTO, UpdatePlatAvailabilityDTO, UpdatePlatDTO } from "../models/plats.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
 
@@ -111,6 +111,34 @@ export class PlatService {
             });
         } catch (error) {
             throw new AppError("Error al obtenir les categories", 500);
+        }
+    }
+
+    static async updatePlatAvailability(
+        idRestaurant: number,
+        idPlat: number,
+        data: UpdatePlatAvailabilityDTO
+    ) {
+        try {
+            const entry = await prisma.platRestaurant.findFirst({
+                where: {
+                    id_restaurant: idRestaurant,
+                    id_plat: idPlat,
+                },
+                select: { id: true },
+            });
+
+            if (!entry) {
+                throw new AppError("El plat no està assignat al restaurant indicat", 404);
+            }
+
+            return await prisma.platRestaurant.update({
+                where: { id: entry.id },
+                data: { disponibilitat: data.disponibilitat },
+            });
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError("Error al actualizar la disponibilitat del plat", 500);
         }
     }
 

@@ -25,6 +25,11 @@ export const CategoriaSchema = z.object({
     descripcio: z.string().optional().default(""),
 });
 
+export const UpdatePlatAvailabilitySchema = z.object({
+    disponibilitat: z.boolean(),
+});
+
 export type PlatDTO = z.infer<typeof PlatSchema>;
 export type UpdatePlatDTO = z.infer<typeof UpdatePlatSchema>;
 export type CategoriaDTO = z.infer<typeof CategoriaSchema>;
+export type UpdatePlatAvailabilityDTO = z.infer<typeof UpdatePlatAvailabilitySchema>;

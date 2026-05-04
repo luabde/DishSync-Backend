@@ -130,7 +130,10 @@ export class RestaurantController {
   static getReservationsForm = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { restaurantId } = req.params;
-      const reservations = await RestaurantService.getReservationsForm(Number(restaurantId));
+      const selectedDateParam = req.query.data;
+      const selectedDateRaw = Array.isArray(selectedDateParam) ? selectedDateParam[0] : selectedDateParam;
+      const selectedDate = typeof selectedDateRaw === "string" ? selectedDateRaw : undefined;
+      const reservations = await RestaurantService.getReservationsForm(Number(restaurantId), selectedDate);
       res.status(200).json(reservations);
     } catch (error) {
       next(error);

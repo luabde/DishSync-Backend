@@ -5,7 +5,11 @@ import path from "path";
 import { mkdir, unlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { geocodeAddress } from "../utils/geocoding.util";
-import { CreateReservationDTO, UpdateReservationByStaffDTO } from "../models/reservation.model";
+import {
+    CreateReservationByStaffDTO,
+    CreateReservationDTO,
+    UpdateReservationByStaffDTO,
+} from "../models/reservation.model";
 import { generateReservationToken } from "../utils/reservationToken.util";
 import { EmailService } from "./email.service";
 import { envConfig } from "../config/env.config";
@@ -949,6 +953,148 @@ export class RestaurantService {
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError("Error al crear la reserva", 500);
+        }
+    }
+
+    static async createReservationByStaff(restaurantId: number, data: CreateReservationByStaffDTO) {
+        try {
+            // 1) Validamos que el restaurante exista y esté activo.
+            const restaurant = await prisma.restaurant.findUnique({
+                where: { id: restaurantId },
+                select: { id: true, estat: true },
+            });
+
+            if (!restaurant || restaurant.estat !== "ACTIU") {
+                throw new AppError("Restaurante no disponible para reservas", 404);
+            }
+
+            // 2) Validamos que el turno pertenezca a ese restaurante.
+            const torn = await prisma.torn.findFirst({
+                where: { id_restaurant: restaurantId, id: data.id_torn },
+                select: { id: true },
+            });
+            if (!torn) throw new AppError("Turno no válido", 400);
+
+            // 3) Validamos que la mesa exista en ese restaurante y obtenemos aforo mínimo/máximo.
+            const taulaRestaurant = await prisma.taulaRestaurant.findFirst({
+                where: { id: data.id_taula_restaurant, id_restaurant: restaurantId },
+                select: {
+                    id: true,
+                    tipusTaula: {
+                        select: {
+                            min_persones_reserva: true,
+                            num_persones: true,
+                        },
+                    },
+                },
+            });
+            if (!taulaRestaurant) throw new AppError("Mesa no válida para este restaurante", 400);
+
+            // 4) Regla de negocio: número de personas dentro del rango permitido por la mesa.
+            if (
+                data.num_persones < taulaRestaurant.tipusTaula.min_persones_reserva ||
+                data.num_persones > taulaRestaurant.tipusTaula.num_persones
+            ) {
+                throw new AppError(
+                    `El número de personas debe estar entre ${taulaRestaurant.tipusTaula.min_persones_reserva} y ${taulaRestaurant.tipusTaula.num_persones}`,
+                    400
+                );
+            }
+
+            // 5) Parseamos la fecha recibida (yyyy-mm-dd) para comparar/guardar en BD.
+            const reservationDate = new Date(`${data.data}T00:00:00`);
+            if (Number.isNaN(reservationDate.getTime())) {
+                throw new AppError("Fecha de reserva inválida", 400);
+            }
+
+            // 6) Evitamos doble reserva en la misma mesa+turno+hora+fecha.
+            const conflictingReservation = await prisma.reserva.findFirst({
+                where: {
+                    id_taula_restaurant: data.id_taula_restaurant,
+                    id_torn: torn.id,
+                    hora: data.hora,
+                    data: reservationDate,
+                    OR: [{ estat: "RESERVADA" }, { estat: "OCUPADA" }, { estat: "PENDENT" }],
+                },
+                select: { id: true },
+            });
+            if (conflictingReservation) {
+                throw new AppError("La mesa ya no está disponible para esa fecha y hora", 409);
+            }
+
+            // 7) Normalizamos datos del contacto.
+            //    - email es opcional en flujo staff
+            //    - inferimos apellidos desde "nom" si no llegan separados
+            const normalizedEmail = data.email?.trim().toLowerCase() || null;
+            const [nom, ...cognomsParts] = data.nom.trim().split(/\s+/);
+            const inferredCognoms = data.cognoms?.trim() || cognomsParts.join(" ");
+            const token = generateReservationToken();
+
+            const result = await prisma.$transaction(async (tx) => {
+                // Si no hay email, generamos uno técnico para satisfacer la restricción UNIQUE/NOT NULL
+                // del modelo Client sin bloquear la creación de la reserva en sala.
+                const generatedEmail =
+                    normalizedEmail ??
+                    `staff-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@no-email.local`;
+
+                // Con email real: reutilizamos o actualizamos cliente por email.
+                // Sin email: creamos un cliente nuevo con email técnico.
+                const client = normalizedEmail
+                    ? await tx.client.upsert({
+                          where: { email: normalizedEmail },
+                          update: {
+                              nom: nom || data.nom.trim(),
+                              cognoms: inferredCognoms || "-",
+                              telefon: data.telefon.trim(),
+                          },
+                          create: {
+                              nom: nom || data.nom.trim(),
+                              cognoms: inferredCognoms || "-",
+                              email: normalizedEmail,
+                              telefon: data.telefon.trim(),
+                          },
+                      })
+                    : await tx.client.create({
+                          data: {
+                              nom: nom || data.nom.trim(),
+                              cognoms: inferredCognoms || "-",
+                              email: generatedEmail,
+                              telefon: data.telefon.trim(),
+                          },
+                      });
+
+                // 8) Creamos reserva directa de staff:
+                //    - sin workers
+                //    - sin correos de confirmación/cancelación
+                //    - estado final lo decide el staff (RESERVADA u OCUPADA)
+                const reserva = await tx.reserva.create({
+                    data: {
+                        id_taula_restaurant: data.id_taula_restaurant,
+                        id_restaurant: restaurantId,
+                        id_client: client.id,
+                        id_torn: torn.id,
+                        data: reservationDate,
+                        hora: data.hora,
+                        observacions: data.observacions?.trim() || null,
+                        num_persones: data.num_persones,
+                        token,
+                        data_expiracio: new Date(),
+                        estat: data.estat,
+                    },
+                });
+
+                return { reserva };
+            });
+
+            // 9) Respuesta simple para UI de staff.
+            return {
+                message: "Reserva creada correctamente desde staff",
+                reservaId: result.reserva.id,
+                estat: result.reserva.estat,
+            };
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError("Error al crear la reserva desde staff", 500);
         }
     }
 

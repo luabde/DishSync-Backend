@@ -172,6 +172,16 @@ export class RestaurantController {
     }
   };
 
+  static createReservationByStaff = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const reservation = await RestaurantService.createReservationByStaff(Number(restaurantId), req.body);
+      res.status(201).json(reservation);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   static releaseReservationByStaff = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { restaurantId, reservationId } = req.params;

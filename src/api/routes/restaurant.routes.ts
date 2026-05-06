@@ -3,7 +3,11 @@ import { validate } from "../middlewares/validate.middleware";
 import {checkRole} from "../middlewares/role.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { RestaurantSchema, UpdateRestaurantSchema } from "../../models/restaurant.model";
-import { CreateReservationSchema, UpdateReservationByStaffSchema } from "../../models/reservation.model";
+import {
+  CreateReservationByStaffSchema,
+  CreateReservationSchema,
+  UpdateReservationByStaffSchema,
+} from "../../models/reservation.model";
 import { RestaurantController } from "../controllers/restaurant.controller";
 import { uploadRestaurantImage } from "../middlewares/upload.middleware";
 
@@ -88,6 +92,14 @@ restaurantRouter.post(
   "/reservationsForm/:restaurantId/createReservation",
   validate(CreateReservationSchema),
   RestaurantController.createReservation
+);
+// POST crea una reserva directa desde staff (sin flujo de confirmación por email/workers).
+restaurantRouter.post(
+  "/reservationsForm/staff/:restaurantId/createReservation",
+  authMiddleware,
+  checkRole("RESPONSABLE", "CAMBRER"),
+  validate(CreateReservationByStaffSchema),
+  RestaurantController.createReservationByStaff
 );
 // GET confirma reserva pública por token (email de confirmación).
 restaurantRouter.get("/reservations/confirm/:token", RestaurantController.confirmReservationByToken);

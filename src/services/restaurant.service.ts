@@ -5,7 +5,7 @@ import path from "path";
 import { mkdir, unlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { geocodeAddress } from "../utils/geocoding.util";
-import { CreateReservationDTO } from "../models/reservation.model";
+import { CreateReservationDTO, UpdateReservationByStaffDTO } from "../models/reservation.model";
 import { generateReservationToken } from "../utils/reservationToken.util";
 import { EmailService } from "./email.service";
 import { envConfig } from "../config/env.config";
@@ -521,6 +521,7 @@ export class RestaurantService {
 
     // ---- SERVICIOS PARA RUTAS FORM RESERVAS ----
     static async getReservationsForm(restaurantId: number, selectedDate?: string) {
+        // Devuelve los horarios de los turnos de un restaurante para una fecha específica
         try{
             const turnos = await prisma.torn.findMany({
                 where: { id_restaurant: restaurantId },
@@ -619,8 +620,11 @@ export class RestaurantService {
                     columna: number;
                     span_fila: number;
                     span_columna: number;
+                    id_reserva: number | null;
                     num_persones_reserva: number | null;
                     estat_reserva: string | null;
+                    nom_client: string | null;
+                    cognoms_client: string | null;
                 }>
             >`
                 SELECT
@@ -631,8 +635,11 @@ export class RestaurantService {
                     tr.columna,
                     t.span_fila,
                     t.span_columna,
+                    r.id AS id_reserva,
                     r.num_persones AS num_persones_reserva,
-                    r.estat AS estat_reserva
+                    r.estat AS estat_reserva,
+                    c.nom AS nom_client,
+                    c.cognoms AS cognoms_client
                 FROM "TAULES_RESTAURANT" tr
                 JOIN "TAULES" t
                     ON t.id = tr.id_taula
@@ -645,6 +652,8 @@ export class RestaurantService {
                     AND r.hora = ${data.hora}
                     AND r.data = ${reservationDate}
                     AND r.estat IN ('PENDENT', 'RESERVADA', 'OCUPADA')
+                LEFT JOIN "CLIENTS" c
+                    ON c.id = r.id_client
                 WHERE tr.id_restaurant = ${restaurantId}
                   AND tr.id_zona = ${zona_seleccionada_id}
             `;
@@ -652,6 +661,159 @@ export class RestaurantService {
             return totes_taules;
         }catch(error){
             throw new AppError("Error al obtener las mesas", 500);
+        }
+    }
+
+    static async releaseReservationByStaff(restaurantId: number, reservationId: number) {
+        try {
+            const reserva = await prisma.reserva.findFirst({
+                where: {
+                    id: reservationId,
+                    id_restaurant: restaurantId,
+                },
+                select: {
+                    id: true,
+                    estat: true,
+                },
+            });
+
+            if (!reserva) {
+                throw new AppError("Reserva no encontrada para este restaurante", 404);
+            }
+
+            if (!["PENDENT", "RESERVADA", "OCUPADA"].includes(reserva.estat)) {
+                throw new AppError("La reserva ya no está activa", 400);
+            }
+
+            return await prisma.reserva.update({
+                where: { id: reservationId },
+                // En liberación manual desde sala, el estado de negocio es LLIURE.
+                data: { estat: "LLIURE" },
+            });
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError("Error al liberar la reserva", 500);
+        }
+    }
+
+    static async updateReservationByStaff(
+        restaurantId: number,
+        reservationId: number,
+        data: UpdateReservationByStaffDTO
+    ) {
+        try {
+            const reservationDate = new Date(`${data.data}T00:00:00`);
+            if (Number.isNaN(reservationDate.getTime())) {
+                throw new AppError("Fecha de reserva inválida", 400);
+            }
+
+            // Agrupamos validaciones principales en una solo array de objetos.
+            const [reserva, taulaRestaurant, torn] = await prisma.$transaction([
+                prisma.reserva.findFirst({
+                    where: {
+                        id: reservationId,
+                        id_restaurant: restaurantId,
+                    },
+                    select: {
+                        id: true,
+                        id_client: true,
+                    },
+                }),
+                prisma.taulaRestaurant.findFirst({
+                    where: {
+                        id: data.id_taula_restaurant,
+                        id_restaurant: restaurantId,
+                    },
+                    select: {
+                        id: true,
+                        tipusTaula: {
+                            select: {
+                                min_persones_reserva: true,
+                                num_persones: true,
+                            },
+                        },
+                    },
+                }),
+                prisma.torn.findFirst({
+                    where: {
+                        id: data.id_torn,
+                        id_restaurant: restaurantId,
+                    },
+                    select: { id: true },
+                }),
+            ]);
+
+            if (!reserva) {
+                throw new AppError("Reserva no encontrada para este restaurante", 404);
+            }
+            if (!taulaRestaurant) {
+                throw new AppError("Mesa no válida para este restaurante", 400);
+            }
+            if (!torn) {
+                throw new AppError("Turno no válido", 400);
+            }
+
+            // Ahora se valida que el numero de personas, este entre el minimo y el maximo permitido de la mesa seleccionada
+            if (
+                data.num_persones < taulaRestaurant.tipusTaula.min_persones_reserva ||
+                data.num_persones > taulaRestaurant.tipusTaula.num_persones
+            ) {
+                throw new AppError(
+                    `El número de personas debe estar entre ${taulaRestaurant.tipusTaula.min_persones_reserva} y ${taulaRestaurant.tipusTaula.num_persones}`,
+                    400
+                );
+            }
+
+            // Solo comprobamos conflictos si la reserva se quedará en estado activo.
+            if (["PENDENT", "RESERVADA", "OCUPADA"].includes(data.estat)) {
+                const conflictingReservation = await prisma.reserva.findFirst({
+                    where: {
+                        id: { not: reservationId },
+                        id_taula_restaurant: data.id_taula_restaurant,
+                        id_torn: data.id_torn,
+                        hora: data.hora,
+                        data: reservationDate,
+                        estat: { in: ["PENDENT", "RESERVADA", "OCUPADA"] },
+                    },
+                    select: { id: true },
+                });
+
+                if (conflictingReservation) {
+                    throw new AppError("La mesa ya está ocupada para esa fecha y hora", 409);
+                }
+            }
+
+            const fullName = data.nom_contacte?.trim();
+            const [nomContacte = "", ...cognomsParts] = fullName ? fullName.split(/\s+/) : [];
+            const cognomsContacte = cognomsParts.join(" ");
+
+            return await prisma.$transaction(async (tx) => {
+                if (fullName) {
+                    await tx.client.update({
+                        where: { id: reserva.id_client },
+                        data: {
+                            nom: nomContacte || fullName,
+                            cognoms: cognomsContacte || "-",
+                        },
+                    });
+                }
+
+                return tx.reserva.update({
+                    where: { id: reservationId },
+                    data: {
+                        id_taula_restaurant: data.id_taula_restaurant,
+                        id_torn: data.id_torn,
+                        data: reservationDate,
+                        hora: data.hora,
+                        num_persones: data.num_persones,
+                        estat: data.estat,
+                        observacions: data.observacions?.trim() || null,
+                    },
+                });
+            });
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError("Error al actualizar la reserva", 500);
         }
     }
 

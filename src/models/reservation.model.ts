@@ -15,3 +15,24 @@ export const CreateReservationSchema = z.object({
 
 export type CreateReservationDTO = z.infer<typeof CreateReservationSchema>;
 
+export const UpdateReservationByStaffSchema = z
+  .object({
+    // Clave oficial usada por backend.
+    nom_contacte: z.string().min(1, "El nombre del contacto es obligatorio").optional(),
+    // Alias legacy para compatibilidad con payloads anteriores de frontend.
+    nomClient: z.string().min(1, "El nombre del contacto es obligatorio").optional(),
+    id_taula_restaurant: z.number().int().positive(),
+    id_torn: z.number().int().positive(),
+    data: z.string().min(1, "La fecha es obligatoria"),
+    hora: z.string().min(1, "La hora es obligatoria"),
+    num_persones: z.number().int().positive(),
+    estat: z.enum(["RESERVADA", "OCUPADA", "LLIURE"]),
+    observacions: z.string().optional(),
+  })
+  .transform(({ nomClient, nom_contacte, ...rest }) => ({
+    ...rest,
+    nom_contacte: nom_contacte ?? nomClient,
+  }));
+
+export type UpdateReservationByStaffDTO = z.infer<typeof UpdateReservationByStaffSchema>;
+

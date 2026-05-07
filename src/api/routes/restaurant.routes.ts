@@ -3,7 +3,11 @@ import { validate } from "../middlewares/validate.middleware";
 import {checkRole} from "../middlewares/role.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { RestaurantSchema, UpdateRestaurantSchema } from "../../models/restaurant.model";
-import { CreateReservationSchema } from "../../models/reservation.model";
+import {
+  CreateReservationByStaffSchema,
+  CreateReservationSchema,
+  UpdateReservationByStaffSchema,
+} from "../../models/reservation.model";
 import { RestaurantController } from "../controllers/restaurant.controller";
 import { uploadRestaurantImage } from "../middlewares/upload.middleware";
 
@@ -62,14 +66,42 @@ restaurantRouter.patch("/:id/deactivate", authMiddleware, checkRole("ADMIN"), Re
 
 
 // ---- RUTAS FORM RESERVAS ----
-// Rutas públicas para el formulario de reserva de clientes (sin autenticación).
+// GET turnos/horas disponibles para una fecha del restaurante.
 restaurantRouter.get("/reservationsForm/:restaurantId", RestaurantController.getReservationsForm);
+// POST mesas (con estado de reserva) filtradas por fecha/turno/hora/zona.
 restaurantRouter.post("/reservationsForm/:restaurantId/getTaules", RestaurantController.getTaules);
+// GET zonas configuradas del restaurante para el mapa/formulario.
 restaurantRouter.get("/reservationsForm/:restaurantId/zones", RestaurantController.getReservationZones);
+// PATCH libera una reserva concreta y la deja en estado LLIURE (staff).
+restaurantRouter.patch(
+  "/reservationsForm/:restaurantId/reservations/:reservationId/release",
+  authMiddleware,
+  checkRole("RESPONSABLE", "CAMBRER"),
+  RestaurantController.releaseReservationByStaff
+);
+// PATCH edita una reserva desde staff (contacto, mesa, turno, fecha, hora, personas, estado, observaciones).
+restaurantRouter.patch(
+  "/reservationsForm/:restaurantId/reservations/:reservationId",
+  authMiddleware,
+  checkRole("RESPONSABLE", "CAMBRER"),
+  validate(UpdateReservationByStaffSchema),
+  RestaurantController.updateReservationByStaff
+);
+// POST crea una nueva reserva de cliente para el restaurante.
 restaurantRouter.post(
   "/reservationsForm/:restaurantId/createReservation",
   validate(CreateReservationSchema),
   RestaurantController.createReservation
 );
+// POST crea una reserva directa desde staff (sin flujo de confirmación por email/workers).
+restaurantRouter.post(
+  "/reservationsForm/staff/:restaurantId/createReservation",
+  authMiddleware,
+  checkRole("RESPONSABLE", "CAMBRER"),
+  validate(CreateReservationByStaffSchema),
+  RestaurantController.createReservationByStaff
+);
+// GET confirma reserva pública por token (email de confirmación).
 restaurantRouter.get("/reservations/confirm/:token", RestaurantController.confirmReservationByToken);
+// GET cancela reserva pública por token (email de cancelación).
 restaurantRouter.get("/reservations/cancel/:token", RestaurantController.cancelReservationByToken);

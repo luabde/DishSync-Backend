@@ -172,6 +172,43 @@ export class RestaurantController {
     }
   };
 
+  static createReservationByStaff = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId } = req.params;
+      const reservation = await RestaurantService.createReservationByStaff(Number(restaurantId), req.body);
+      res.status(201).json(reservation);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static releaseReservationByStaff = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId, reservationId } = req.params;
+      const reservation = await RestaurantService.releaseReservationByStaff(
+        Number(restaurantId),
+        Number(reservationId)
+      );
+      res.status(200).json({ message: "Reserva liberada correctamente", reservation });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static updateReservationByStaff = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { restaurantId, reservationId } = req.params;
+      const reservation = await RestaurantService.updateReservationByStaff(
+        Number(restaurantId),
+        Number(reservationId),
+        req.body
+      );
+      res.status(200).json({ message: "Reserva actualizada correctamente", reservation });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   static confirmReservationByToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tokenParam = req.params.token;

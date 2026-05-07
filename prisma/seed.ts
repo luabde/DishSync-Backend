@@ -5,7 +5,7 @@ import { prisma } from "../src/loaders/prisma.loader";
 
 async function main() {
   console.log("🚀 Iniciando el seed...");
-  
+
   if (!process.env.DATABASE_URL) {
     console.error("Error: DATABASE_URL no está definida");
     process.exit(1);

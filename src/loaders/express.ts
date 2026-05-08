@@ -6,6 +6,8 @@ import { errorMiddleware } from "../api/middlewares/errorMiddleware";
 import { AppError } from "../utils/AppError";
 import cookieparser from "cookie-parser";
 import path from "path";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "../docs/swagger";
 
 export const expressLoader = (app: Application) => {
   // Middlewares
@@ -21,6 +23,8 @@ export const expressLoader = (app: Application) => {
   
   // Sirve archivos estáticos locales para desarrollo (ej: imágenes de restaurantes).
   app.use("/public", express.static(path.join(process.cwd(), "public")));
+
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   app.use("/api", router);
 

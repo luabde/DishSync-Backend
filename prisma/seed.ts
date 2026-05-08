@@ -31,62 +31,6 @@ async function main() {
 
     console.log("Usuario admin creado/actualizado correctamente.");
 
-    const restaurantsSeed = [
-      {
-        nom: "El Castell Barcelona Centro",
-        direccio: "Plaça de Catalunya, Barcelona",
-        lat: 41.3870,
-        lng: 2.1701,
-        horaris: "12:00-16:00, 20:00-23:30",
-        telefon: "933000111",
-        url: "public/restaurants/el-castell-barcelona-centro.jpg",
-        descripcio: "Restaurant al centre de Barcelona.",
-        estat: "ACTIU" as const,
-      },
-      {
-        nom: "El Castell Gràcia",
-        direccio: "Carrer Gran de Gràcia, Barcelona",
-        lat: 41.4017,
-        lng: 2.1530,
-        horaris: "13:00-16:00, 20:00-23:00",
-        telefon: "933000222",
-        url: "public/restaurants/el-castell-gracia.jpg",
-        descripcio: "Restaurant al barri de Gràcia.",
-        estat: "ACTIU" as const,
-      },
-      {
-        nom: "El Castell València",
-        direccio: "Plaça de l'Ajuntament, València",
-        lat: 39.4699,
-        lng: -0.3763,
-        horaris: "13:00-16:30, 20:30-23:30",
-        telefon: "963000333",
-        url: "public/restaurants/el-castell-valencia.jpg",
-        descripcio: "Restaurant al centre de València.",
-        estat: "ACTIU" as const,
-      },
-    ];
-
-    for (const restaurant of restaurantsSeed) {
-      const existingRestaurant = await prisma.restaurant.findFirst({
-        where: { nom: restaurant.nom },
-        select: { id: true },
-      });
-
-      if (existingRestaurant) {
-        await prisma.restaurant.update({
-          where: { id: existingRestaurant.id },
-          data: restaurant,
-        });
-      } else {
-        await prisma.restaurant.create({
-          data: restaurant,
-        });
-      }
-    }
-
-    console.log(`Restaurantes creados/actualizados correctamente: ${restaurantsSeed.length}.`);
-
     const categoriesSeed = [
       {
         nom: "Entrants",
@@ -542,8 +486,29 @@ async function main() {
 
     console.log(`Contactes creados/actualizados correctamente: ${contactsSeed.length}.`);
 
+    const staffProfilesByRestaurant: Record<
+      string,
+      {
+        cambrer: { nom: string; cognoms: string };
+        responsable: { nom: string; cognoms: string };
+      }
+    > = {
+      "El Castell Barcelona Centro": {
+        cambrer: { nom: "Marc", cognoms: "Soler Pujol" },
+        responsable: { nom: "Nuria", cognoms: "Casas Riera" },
+      },
+      "El Castell Gràcia": {
+        cambrer: { nom: "Pau", cognoms: "Vidal Serra" },
+        responsable: { nom: "Mireia", cognoms: "Roca Ferrer" },
+      },
+      "El Castell València": {
+        cambrer: { nom: "Joan", cognoms: "Marti Navarro" },
+        responsable: { nom: "Clara", cognoms: "Domenech Sanz" },
+      },
+    };
+
     const allSeedRestaurants = await prisma.restaurant.findMany({
-      where: { nom: { in: restaurantsSeed.map((restaurant) => restaurant.nom) } },
+      where: { nom: { in: Object.keys(staffProfilesByRestaurant) } },
       select: { id: true, nom: true },
     });
 
@@ -555,6 +520,9 @@ async function main() {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
+      const staffProfiles = staffProfilesByRestaurant[restaurant.nom];
+      const cambrerProfile = staffProfiles?.cambrer ?? { nom: "Marc", cognoms: "Soler" };
+      const responsableProfile = staffProfiles?.responsable ?? { nom: "Nuria", cognoms: "Casas" };
 
       const cambrerHash = await bcrypt.hash("Cambrer2026!", 10);
       const responsableHash = await bcrypt.hash("Responsable2026!", 10);
@@ -562,15 +530,15 @@ async function main() {
       await prisma.usuari.upsert({
         where: { email: `cambrer.${slug}@dishsync.com` },
         update: {
-          nom: "Cambrer",
-          cognoms: restaurant.nom,
+          nom: cambrerProfile.nom,
+          cognoms: cambrerProfile.cognoms,
           password: cambrerHash,
           rol: RolUsuari.CAMBRER,
           id_restaurant: restaurant.id,
         },
         create: {
-          nom: "Cambrer",
-          cognoms: restaurant.nom,
+          nom: cambrerProfile.nom,
+          cognoms: cambrerProfile.cognoms,
           email: `cambrer.${slug}@dishsync.com`,
           password: cambrerHash,
           rol: RolUsuari.CAMBRER,
@@ -581,15 +549,15 @@ async function main() {
       await prisma.usuari.upsert({
         where: { email: `responsable.${slug}@dishsync.com` },
         update: {
-          nom: "Responsable",
-          cognoms: restaurant.nom,
+          nom: responsableProfile.nom,
+          cognoms: responsableProfile.cognoms,
           password: responsableHash,
           rol: RolUsuari.RESPONSABLE,
           id_restaurant: restaurant.id,
         },
         create: {
-          nom: "Responsable",
-          cognoms: restaurant.nom,
+          nom: responsableProfile.nom,
+          cognoms: responsableProfile.cognoms,
           email: `responsable.${slug}@dishsync.com`,
           password: responsableHash,
           rol: RolUsuari.RESPONSABLE,
@@ -597,7 +565,6 @@ async function main() {
         },
       });
     }
-
     const result = await prisma.taula.createMany({
       data: [
         { num_persones: 2, span_fila: 1, span_columna: 1, min_persones_reserva: 1 },
@@ -611,213 +578,7 @@ async function main() {
     });
 
     console.log(`Mesas creadas correctamente: ${result.count} registros insertados.`);
-
-    const tableTypes = await prisma.taula.findMany({
-      where: { num_persones: { in: [2, 4, 6, 8, 10, 12] } },
-      select: { id: true, num_persones: true },
-    });
-    const tableTypeIdBySeats = new Map(tableTypes.map((tableType) => [tableType.num_persones, tableType.id]));
-
-    // Todos los platos quedan asignados a todos los restaurantes.
-    const allDishes = await prisma.plat.findMany({ select: { id: true } });
-    for (const restaurant of allSeedRestaurants) {
-      for (const dish of allDishes) {
-        const existingDishRelation = await prisma.platRestaurant.findFirst({
-          where: { id_restaurant: restaurant.id, id_plat: dish.id },
-          select: { id: true },
-        });
-
-        if (!existingDishRelation) {
-          await prisma.platRestaurant.create({
-            data: {
-              id_restaurant: restaurant.id,
-              id_plat: dish.id,
-              disponibilitat: true,
-            },
-          });
-        }
-      }
-    }
-
-    // Zonas, turnos (dinar/sopar) y horarios por restaurante.
-    const zonesByRestaurant: Record<string, Array<{ nom: string; capacitat_max: number }>> = {
-      "El Castell Barcelona Centro": [
-        { nom: "Terrassa", capacitat_max: 30 },
-        { nom: "Sala Principal", capacitat_max: 60 },
-        { nom: "Privada", capacitat_max: 20 },
-      ],
-      "El Castell Gràcia": [
-        { nom: "Interior", capacitat_max: 40 },
-        { nom: "Altell", capacitat_max: 26 },
-        { nom: "Terrassa", capacitat_max: 24 },
-      ],
-      "El Castell València": [
-        { nom: "Sala Riu", capacitat_max: 42 },
-        { nom: "Sala Jardí", capacitat_max: 30 },
-        { nom: "Privat", capacitat_max: 20 },
-      ],
-    };
-
-    const tablePlacementsByRestaurant: Record<
-      string,
-      Array<{ zona: string; num_taula: number; fila: number; columna: number; num_persones: number }>
-    > = {
-      "El Castell Barcelona Centro": [
-        { zona: "Terrassa", num_taula: 1, fila: 1, columna: 1, num_persones: 2 },
-        { zona: "Terrassa", num_taula: 2, fila: 1, columna: 2, num_persones: 4 },
-        { zona: "Terrassa", num_taula: 3, fila: 2, columna: 1, num_persones: 4 },
-        { zona: "Sala Principal", num_taula: 4, fila: 1, columna: 1, num_persones: 6 },
-        { zona: "Sala Principal", num_taula: 5, fila: 1, columna: 3, num_persones: 8 },
-        { zona: "Sala Principal", num_taula: 6, fila: 2, columna: 1, num_persones: 10 },
-        { zona: "Privada", num_taula: 7, fila: 1, columna: 1, num_persones: 8 },
-      ],
-      "El Castell Gràcia": [
-        { zona: "Interior", num_taula: 1, fila: 1, columna: 1, num_persones: 2 },
-        { zona: "Interior", num_taula: 2, fila: 1, columna: 2, num_persones: 4 },
-        { zona: "Interior", num_taula: 3, fila: 2, columna: 1, num_persones: 6 },
-        { zona: "Altell", num_taula: 4, fila: 1, columna: 1, num_persones: 4 },
-        { zona: "Altell", num_taula: 5, fila: 1, columna: 2, num_persones: 8 },
-        { zona: "Terrassa", num_taula: 6, fila: 1, columna: 1, num_persones: 2 },
-        { zona: "Terrassa", num_taula: 7, fila: 2, columna: 1, num_persones: 4 },
-      ],
-      "El Castell València": [
-        { zona: "Sala Riu", num_taula: 1, fila: 1, columna: 1, num_persones: 4 },
-        { zona: "Sala Riu", num_taula: 2, fila: 1, columna: 3, num_persones: 6 },
-        { zona: "Sala Riu", num_taula: 3, fila: 2, columna: 1, num_persones: 8 },
-        { zona: "Sala Jardí", num_taula: 4, fila: 1, columna: 1, num_persones: 4 },
-        { zona: "Sala Jardí", num_taula: 5, fila: 1, columna: 2, num_persones: 6 },
-        { zona: "Privat", num_taula: 6, fila: 1, columna: 1, num_persones: 10 },
-      ],
-    };
-
-    const weekDays = [1, 2, 3, 4, 5, 6, 7];
-    const dinarHours = ["13:00", "13:30", "14:00", "14:30", "15:00"];
-    const soparHours = ["20:00", "20:30", "21:00", "21:30", "22:00"];
-
-    for (const restaurant of allSeedRestaurants) {
-      const restaurantZones = zonesByRestaurant[restaurant.nom] ?? [];
-      const zoneIdByName = new Map<string, number>();
-
-      for (const zone of restaurantZones) {
-        const existingZone = await prisma.zona.findFirst({
-          where: { id_restaurant: restaurant.id, nom: zone.nom },
-          select: { id: true },
-        });
-
-        if (existingZone) {
-          await prisma.zona.update({
-            where: { id: existingZone.id },
-            data: { capacitat_max: zone.capacitat_max },
-          });
-          zoneIdByName.set(zone.nom, existingZone.id);
-        } else {
-          const createdZone = await prisma.zona.create({
-            data: { id_restaurant: restaurant.id, nom: zone.nom, capacitat_max: zone.capacitat_max },
-            select: { id: true },
-          });
-          zoneIdByName.set(zone.nom, createdZone.id);
-        }
-      }
-
-      const restaurantTables = tablePlacementsByRestaurant[restaurant.nom] ?? [];
-      for (const table of restaurantTables) {
-        const zoneId = zoneIdByName.get(table.zona);
-        const tableTypeId = tableTypeIdBySeats.get(table.num_persones);
-        if (!zoneId || !tableTypeId) continue;
-
-        const existingPlacement = await prisma.taulaRestaurant.findFirst({
-          where: { id_restaurant: restaurant.id, num_taula: table.num_taula },
-          select: { id: true },
-        });
-
-        if (existingPlacement) {
-          await prisma.taulaRestaurant.update({
-            where: { id: existingPlacement.id },
-            data: {
-              id_zona: zoneId,
-              id_taula: tableTypeId,
-              fila: table.fila,
-              columna: table.columna,
-            },
-          });
-        } else {
-          await prisma.taulaRestaurant.create({
-            data: {
-              id_restaurant: restaurant.id,
-              id_zona: zoneId,
-              id_taula: tableTypeId,
-              num_taula: table.num_taula,
-              fila: table.fila,
-              columna: table.columna,
-            },
-          });
-        }
-      }
-
-      // Turno DINAR
-      let dinarTorn = await prisma.torn.findFirst({
-        where: { id_restaurant: restaurant.id, nom: "Dinar" },
-        select: { id: true },
-      });
-      if (!dinarTorn) {
-        dinarTorn = await prisma.torn.create({
-          data: { id_restaurant: restaurant.id, nom: "Dinar", hora_inici: "13:00", hora_fi: "16:00" },
-          select: { id: true },
-        });
-      } else {
-        await prisma.torn.update({
-          where: { id: dinarTorn.id },
-          data: { hora_inici: "13:00", hora_fi: "16:00" },
-        });
-      }
-
-      // Turno SOPAR
-      let soparTorn = await prisma.torn.findFirst({
-        where: { id_restaurant: restaurant.id, nom: "Sopar" },
-        select: { id: true },
-      });
-      if (!soparTorn) {
-        soparTorn = await prisma.torn.create({
-          data: { id_restaurant: restaurant.id, nom: "Sopar", hora_inici: "20:00", hora_fi: "23:30" },
-          select: { id: true },
-        });
-      } else {
-        await prisma.torn.update({
-          where: { id: soparTorn.id },
-          data: { hora_inici: "20:00", hora_fi: "23:30" },
-        });
-      }
-
-      for (const day of weekDays) {
-        for (const hour of dinarHours) {
-          const exists = await prisma.horarisTorn.findFirst({
-            where: { id_torn: dinarTorn.id, dia_setmana: day, hora: hour },
-            select: { id: true },
-          });
-          if (!exists) {
-            await prisma.horarisTorn.create({
-              data: { id_torn: dinarTorn.id, dia_setmana: day, hora: hour },
-            });
-          }
-        }
-      }
-
-      for (const day of weekDays) {
-        for (const hour of soparHours) {
-          const exists = await prisma.horarisTorn.findFirst({
-            where: { id_torn: soparTorn.id, dia_setmana: day, hora: hour },
-            select: { id: true },
-          });
-          if (!exists) {
-            await prisma.horarisTorn.create({
-              data: { id_torn: soparTorn.id, dia_setmana: day, hora: hour },
-            });
-          }
-        }
-      }
-    }
-
-    console.log("Seed de relaciones de restaurante completado (usuarios, zonas, turnos, horarios, mesas y platos).");
+    console.log(`Usuaris de staff creats/actualitzats: ${allSeedRestaurants.length * 2}.`);
   } catch (error) {
     console.error("Error durante el seed:", error);
     throw error;

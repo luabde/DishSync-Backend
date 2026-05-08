@@ -1,24 +1,57 @@
 # DishSync Backend
 
-Backend de la aplicación **DishSync**.
+## Què és DishSync?
 
-API desarrollada con **Node.js**, **Express**, **TypeScript** y **Prisma**, utilizando **PostgreSQL** como base de datos y **Docker** para el entorno de desarrollo.
+**DishSync** és una plataforma de gestió integral per a restaurants. Permet administrar múltiples establiments, configurar zones i taules de sala, gestionar reserves de clients i controlar la carta de plats i la seva disponibilitat per restaurant.
+
+## Què fa aquesta API?
+
+Aquesta API REST és el nucli del sistema. Proporciona tots els endpoints que consumeix tant el panell d'administració com el portal públic de reserves. Les principals àrees de funcionalitat són:
+
+- **Gestió de restaurants** — alta, edició, desactivació i consulta d'establiments amb geolocalització.
+- **Zones i taules** — configuració del plànol de sala: zones, tipus de taula i instàncies físiques per restaurant.
+- **Reserves** — flux públic de reserva amb confirmació/cancel·lació per token via correu electrònic, i flux intern de gestió per part del personal (cambrer i responsable).
+- **Plats i carta** — catàleg global de plats i categories, amb disponibilitat per restaurant gestionable pel responsable.
+- **Autenticació i personal** — login/logout amb JWT en cookie, refresh token, i control d'accés per rols (`ADMIN`, `RESPONSABLE`, `CAMBRER`).
+- **Formulari de contacte** — enviament i gestió de missatges de clients.
+- **Workers en segon pla** — enviament d'emails transaccionals (Nodemailer) i expiració automàtica de reserves no confirmades.
+
+## Stack tecnològic
+
+| Capa | Tecnologia |
+|---|---|
+| Servidor | Node.js + Express 5 |
+| Llenguatge | TypeScript |
+| ORM | Prisma 7 |
+| Base de dades | PostgreSQL (via Docker en local) |
+| Validació | Zod |
+| Autenticació | JWT (jsonwebtoken) + cookies |
+| Fitxers | Multer |
+| Correu | Nodemailer |
+
+> Per a documentació detallada consulta la carpeta [`doc/`](./doc/).
 
 ---
 
-# Requisitos
+Backend de l'aplicació **DishSync**.
 
-Antes de ejecutar el proyecto debes tener instalado:
+API desenvolupada amb **Node.js**, **Express**, **TypeScript** i **Prisma**, utilitzant **PostgreSQL** com a base de dades i **Docker** per a l'entorn de desenvolupament.
+
+---
+
+## Requisits
+
+Abans d'executar el projecte has de tenir instal·lat:
 
 * Node.js (recomendado >= 18)
 * Docker
 * pnpm
 
-Instalar **pnpm** si no lo tienes:
+Instal·la **pnpm** si no el tens:
 
 https://pnpm.io/installation
 
-Ejemplo para Windows (PowerShell):
+Exemple per a Windows (PowerShell):
 
 ```
 Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression
@@ -26,9 +59,9 @@ Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expr
 
 ---
 
-# Instalación
+## Instal·lació
 
-Clonar el repositorio e instalar dependencias:
+Clona el repositori i instal·la les dependències:
 
 ```
 pnpm install
@@ -36,11 +69,11 @@ pnpm install
 
 ---
 
-# Variables de entorno
+## Variables d'entorn
 
-Crear un archivo `.env` en la raíz del proyecto.
+Crea un fitxer `.env` a l'arrel del projecte.
 
-Ejemplo:
+Exemple:
 
 ```
 PORT=3000
@@ -53,81 +86,81 @@ POSTGRES_PASSWORD=prisma
 DATABASE_URL="postgresql://postgres:prisma@localhost:5432/postgres?schema=public"
 ```
 
-> Los valores de `DATABASE_URL` deben estar escritos directamente, sin referenciar otras variables del `.env`, ya que el archivo `.env` no interpola variables.
+> Els valors de `DATABASE_URL` s'han d'escriure directament, sense referenciar altres variables del `.env`, ja que el fitxer `.env` no interpola variables.
 ```
 
 ---
 
-# Flujo de desarrollo
+## Flux de desenvolupament
 
-Para ejecutar el proyecto en local sigue estos pasos.
+Per executar el projecte en local segueix aquests passos.
 
-## 1. Levantar la base de datos
+### 1. Posar en marxa la base de dades
 
-El proyecto utiliza **PostgreSQL** mediante Docker.
+El projecte utilitza **PostgreSQL** mitjançant Docker.
 
 ```
 docker compose -f docker-compose.postgres.yml up -d
 ```
 
-Esto iniciará el contenedor de la base de datos.
+Això iniciarà el contenidor de la base de dades.
 ```
 ---
 
 
-## 2. Generar el cliente de Prisma
+### 2. Generar el client de Prisma
 
-La primera vez que configures el proyecto, o cada vez que modifiques el `schema.prisma`, debes regenerar el cliente:
+La primera vegada que configuris el projecte, o cada vegada que modifiquis el `schema.prisma`, has de regenerar el client:
 
 ```
 pnpm db:generate
 ```
 
-Esto genera los tipos y el cliente de Prisma en `src/generated/client`.
+Això genera els tipus i el client de Prisma a `src/generated/client`.
 
 ---
 
-## 3. Ejecutar las migraciones de Prisma
+### 3. Executar les migracions de Prisma
 
-Aplica las migraciones para crear las tablas en la base de datos:
+Aplica les migracions per crear les taules a la base de dades:
 
 ```
 pnpm db:migrate
 ```
 
-Este comando crea la migración si el `schema.prisma` cambió, la aplica en la base de datos y regenera el cliente automáticamente.
+Aquesta comanda crea la migració si el `schema.prisma` ha canviat, l'aplica a la base de dades i regenera el client automàticament.
 
-> Asegúrate de que el contenedor de Docker está corriendo antes de ejecutar este comando.
+> Assegura't que el contenidor de Docker està en execució abans d'executar aquesta comanda.
 ```
 ---
 
-## 4. Iniciar el servidor en modo desarrollo
+### 4. Iniciar el servidor en mode desenvolupament
 
 ```
 pnpm dev
 ```
 
-El servidor se ejecutará normalmente en:
+El servidor s'executarà normalment a:
 
 ```
 http://localhost:3000
 ```
 
-El servidor se reiniciará automáticamente cuando se modifique algún archivo TypeScript.
+El servidor es reiniciarà automàticament quan es modifiqui algun fitxer TypeScript.
 
 ---
 
-## Flujo de trabajo habitual
+## Flux de treball habitual
 
-Una vez configurado el proyecto, el flujo normal de desarrollo es:
+Un cop configurat el projecte, el flux normal de desenvolupament és:
 
-1. Levantar la base de datos
+1. Posar en marxa la base de dades
 
 ```
 docker compose -f docker-compose.postgres.yml up -d
 ```
 
-2. Si cambias el `schema.prisma`, ejecutar migraciones
+2. Si canvies el `schema.prisma`, executar migracions
 
 ```
 pnpm db:migrate
@@ -141,46 +174,46 @@ pnpm dev
 
 ---
 
-# Base de datos (herramientas útiles)
+## Base de dades (eines útils)
 
-Abrir la interfaz gráfica de Prisma:
+Obrir la interfície gràfica de Prisma:
 
 ```
 pnpm db:studio
 ```
 
-Esto abrirá un panel web donde puedes visualizar y modificar los datos de la base de datos.
+Això obrirà un panell web on pots visualitzar i modificar les dades de la base de dades.
 
 ```
 npx tsx prisma/seed.ts
 ```
 
-Esto permite crear los resitros a traves del seed
+Això permet crear els registres a través del seed
 
 
 ---
 
-# Scripts disponibles
+## Scripts disponibles
 
 ```
-pnpm dev           # Ejecuta el servidor en desarrollo
+pnpm dev           # Executa el servidor en desenvolupament
 pnpm build         # Compila TypeScript a la carpeta dist
-pnpm start         # Ejecuta la versión compilada
+pnpm start         # Executa la versió compilada
 
-pnpm db:migrate    # Crea y aplica migraciones con Prisma
-pnpm db:deploy     # Aplica migraciones en producción
-pnpm db:studio     # Abre la interfaz gráfica de Prisma
+pnpm db:migrate    # Crea i aplica migracions amb Prisma
+pnpm db:deploy     # Aplica migracions en producció
+pnpm db:studio     # Obre la interfície gràfica de Prisma
 ```
 
-# Ejecución en producción
+## Execució en producció
 
-## Compilar el proyecto
+### Compilar el projecte
 
 ```
 pnpm build
 ```
 
-## Iniciar el servidor
+### Iniciar el servidor
 
 ```
 pnpm start
@@ -188,11 +221,11 @@ pnpm start
 
 ---
 
-# Ejecución persistente (opcional)
+## Execució persistent (opcional)
 
-Si el proyecto se despliega en un servidor, se puede utilizar **pm2** para mantener la aplicación en ejecución.
+Si el projecte es desplega en un servidor, es pot utilitzar **pm2** per mantenir l'aplicació en execució.
 
-Instalar pm2 globalmente:
+Instal·lar pm2 globalment:
 
 ```
 pnpm add -g pm2
@@ -204,7 +237,7 @@ Iniciar el servidor:
 pm2 start dist/server.js --name dishsync-backend
 ```
 
-Ver logs:
+Veure logs:
 
 ```
 pm2 logs

@@ -1,84 +1,116 @@
-# Libraries
+# Llibreries
 
-## Production Dependencies
+## Dependències de producció
 
-### Framework & Server
+### Framework i servidor
 - **[Express](https://expressjs.com/) `^5.2.1`**
-  Fast, minimalist web framework for Node.js. Handles routing, middleware, and HTTP requests/responses.
+  Framework web minimalista per a Node.js. Gestiona el routing, els middlewares i les peticions/respostes HTTP.
 
-### Database
+### Base de dades
 - **[Prisma Client](https://www.prisma.io/) `^7.4.2`**
-  Auto-generated, type-safe ORM for database access. Types are inferred directly from `schema.prisma`, eliminating the need for manual model definitions.
+  ORM generat automàticament i amb seguretat de tipus per a l'accés a la base de dades. Els tipus s'infereixen directament de `schema.prisma`, eliminant la necessitat de definir models manualment.
 
 - **[pg](https://node-postgres.com/) `^8.19.0`**
-  PostgreSQL client for Node.js. Used as the underlying database driver for Prisma.
+  Client PostgreSQL per a Node.js. S'utilitza com a driver de base de dades subjacent per a Prisma.
 
 - **[@prisma/adapter-pg](https://www.prisma.io/docs/orm/overview/databases/postgresql) `^7.4.2`**
-  Official Prisma adapter for PostgreSQL using the `pg` driver.
+  Adaptador oficial de Prisma per a PostgreSQL usant el driver `pg`.
 
-### Validation
+### Validació
 - **[Zod](https://zod.dev/) `^4.3.6`**
-  TypeScript-first schema validation library. Used to validate incoming request data at runtime. Replaces plain TypeScript interfaces for DTOs, as it persists in production and provides real data validation.
+  Biblioteca de validació d'esquemes amb prioritat per a TypeScript. S'utilitza per validar les dades de les peticions entrants en temps d'execució. Substitueix les interfícies TypeScript simples per als DTOs, ja que persisteix en producció i proporciona validació real de dades.
 
-### Security & Auth
+### Seguretat i autenticació
+- **[bcrypt](https://github.com/kelektiv/node.bcrypt.js) `^5.x`**
+  Biblioteca per fer hash i verificar contrasenyes de manera segura. S'utilitza per xifrar les contrasenyes dels usuaris abans de desar-les a la BD i per verificar-les en el login.
+
+- **[jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) `^9.x`**
+  Implementació de JWT (JSON Web Tokens). S'utilitza per generar i verificar l'`accessToken` i el `refreshToken` del flux d'autenticació.
+
+- **[cookie-parser](https://github.com/expressjs/cookie-parser) `^1.x`**
+  Middleware d'Express per analitzar les cookies de les peticions HTTP. Permet llegir els tokens JWT enviats en cookies HTTP-only.
+
 - **[cors](https://github.com/expressjs/cors) `^2.8.6`**
-  Middleware to enable Cross-Origin Resource Sharing (CORS). Configured via `envConfig.cors.origin`.
+  Middleware per habilitar Cross-Origin Resource Sharing (CORS). Configurat via `envConfig.cors.origin`.
 
-### Configuration
+### Pujada de fitxers
+- **[multer](https://github.com/expressjs/multer) `^1.x`**
+  Middleware per gestionar peticions `multipart/form-data`. S'utilitza per a la pujada d'imatges de restaurants i plats.
+
+### Correu electrònic
+- **[nodemailer](https://nodemailer.com/) `^6.x`**
+  Biblioteca per enviar correus electrònics des de Node.js. S'utilitza per enviar els correus transaccionals de reserves (confirmació, cancel·lació) via SMTP. Configurat a `EmailService`.
+
+### Configuració
 - **[dotenv](https://github.com/motdotla/dotenv) `^17.3.1`**
-  Loads environment variables from `.env` file into `process.env`. Centralized in `src/config/env.config.ts`.
+  Carrega variables d'entorn des del fitxer `.env` a `process.env`. Centralitzat a `src/config/env.config.ts`.
 
 ---
 
-## Development Dependencies
+## Dependències de desenvolupament
 
-### Language & Runtime
+### Llenguatge i execució
 - **[TypeScript](https://www.typescriptlang.org/) `^5.9.3`**
-  Typed superset of JavaScript. Provides static type checking during development. Types and interfaces are stripped at compile time.
+  Superconjunt de JavaScript amb tipus estàtics. Proporciona comprovació de tipus estàtica durant el desenvolupament. Els tipus i les interfícies s'eliminen en temps de compilació.
 
 - **[tsx](https://github.com/privatenumber/tsx) `^4.21.0`**
-  TypeScript executor for Node.js. Used to run `.ts` files directly in development without a separate compilation step.
+  Executor de TypeScript per a Node.js. S'utilitza per executar fitxers `.ts` directament en desenvolupament sense un pas de compilació separat.
 
 - **[ts-node](https://typestrong.org/ts-node/) `^10.9.2`**
-  TypeScript execution engine for Node.js. Used as a fallback runner and for scripts.
+  Motor d'execució de TypeScript per a Node.js. S'utilitza com a executor de suport i per a scripts.
 
-### Database Tooling
+### Eines de base de dades
 - **[Prisma CLI](https://www.prisma.io/docs/orm/tools/prisma-cli) `^7.4.2`**
-  CLI tool for managing database migrations, generating the Prisma Client, and running Prisma Studio.
+  Eina CLI per gestionar migracions de base de dades, generar el client Prisma i executar Prisma Studio.
 
-### Utilities
+### Utilitats
 - **[nodemon](https://nodemon.io/) `^3.1.14`**
-  Monitors file changes and automatically restarts the server during development.
+  Monitoritza els canvis de fitxers i reinicia automàticament el servidor durant el desenvolupament.
 
 - **[cross-env](https://github.com/kentcdodds/cross-env) `^10.1.0`**
-  Sets environment variables across different operating systems (Windows, macOS, Linux) in npm scripts.
+  Estableix variables d'entorn de manera consistent en diferents sistemes operatius (Windows, macOS, Linux) als scripts npm.
 
 - **[rimraf](https://github.com/isaacs/rimraf)**
-  Cross-platform `rm -rf` utility. Used in the `build` script to clean the `dist/` folder before compiling.
+  Utilitat `rm -rf` multiplataforma. S'utilitza a l'script `build` per netejar la carpeta `dist/` abans de compilar.
 
-### Type Definitions
+### Definicions de tipus
 - **[@types/express](https://www.npmjs.com/package/@types/express) `^5.0.6`**
-  TypeScript type definitions for Express.
+  Definicions de tipus TypeScript per a Express.
+
+- **[@types/bcrypt](https://www.npmjs.com/package/@types/bcrypt)**
+  Definicions de tipus TypeScript per a bcrypt.
+
+- **[@types/jsonwebtoken](https://www.npmjs.com/package/@types/jsonwebtoken)**
+  Definicions de tipus TypeScript per a jsonwebtoken.
+
+- **[@types/cookie-parser](https://www.npmjs.com/package/@types/cookie-parser)**
+  Definicions de tipus TypeScript per al middleware cookie-parser.
+
+- **[@types/multer](https://www.npmjs.com/package/@types/multer)**
+  Definicions de tipus TypeScript per a multer.
+
+- **[@types/nodemailer](https://www.npmjs.com/package/@types/nodemailer)**
+  Definicions de tipus TypeScript per a nodemailer.
 
 - **[@types/cors](https://www.npmjs.com/package/@types/cors) `^2.8.19`**
-  TypeScript type definitions for the cors middleware.
+  Definicions de tipus TypeScript per al middleware cors.
 
 - **[@types/node](https://www.npmjs.com/package/@types/node) `^25.3.3`**
-  TypeScript type definitions for Node.js built-in modules.
+  Definicions de tipus TypeScript per als mòduls integrats de Node.js.
 
 - **[@types/pg](https://www.npmjs.com/package/@types/pg) `^8.18.0`**
-  TypeScript type definitions for the `pg` PostgreSQL client.
+  Definicions de tipus TypeScript per al client PostgreSQL `pg`.
 
 ---
 
 ## Scripts
 
-| Script | Command | Description |
+| Script | Comanda | Descripció |
 |---|---|---|
-| `dev` | `cross-env NODE_ENV=development tsx watch src/server.ts` | Start development server with hot reload |
-| `build` | `rimraf dist && tsc` | Compile TypeScript to JavaScript |
-| `start` | `cross-env NODE_ENV=production node dist/server.js` | Start production server |
-| `db:migrate` | `prisma migrate dev` | Run database migrations in development |
-| `db:deploy` | `prisma migrate deploy` | Deploy migrations in production |
-| `db:generate` | `prisma generate` | Regenerate Prisma Client after schema changes |
-| `db:studio` | `prisma studio` | Open Prisma Studio (visual database browser) |
+| `dev` | `cross-env NODE_ENV=development tsx watch src/server.ts` | Inicia el servidor de desenvolupament amb recàrrega automàtica |
+| `build` | `rimraf dist && tsc` | Compila TypeScript a JavaScript |
+| `start` | `cross-env NODE_ENV=production node dist/server.js` | Inicia el servidor de producció |
+| `db:migrate` | `prisma migrate dev` | Executa les migracions de base de dades en desenvolupament |
+| `db:deploy` | `prisma migrate deploy` | Desplega les migracions en producció |
+| `db:generate` | `prisma generate` | Regenera el client Prisma després de canvis a l'esquema |
+| `db:studio` | `prisma studio` | Obre Prisma Studio (navegador visual de base de dades) |

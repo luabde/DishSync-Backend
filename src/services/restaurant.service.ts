@@ -2,7 +2,6 @@ import { RestaurantDTO, UpdateRestaurantDTO } from "../models/restaurant.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
 import path from "path";
-import { mkdir, unlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { geocodeAddress } from "../utils/geocoding.util";
 import {

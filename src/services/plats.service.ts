@@ -1,5 +1,4 @@
 import path from "path";
-import { mkdir, unlink, writeFile } from "fs/promises";
 import { CategoriaDTO, PlatDTO, UpdatePlatAvailabilityDTO, UpdatePlatDTO } from "../models/plats.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";

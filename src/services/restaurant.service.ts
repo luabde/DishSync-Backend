@@ -14,6 +14,7 @@ import { generateReservationToken } from "../utils/reservationToken.util";
 import { EmailService } from "./email.service";
 import { envConfig } from "../config/env.config";
 import { Worker } from "worker_threads";
+import { supabase } from "../loaders/supabase";
 
 type EmailJob =
     | { type: "PENDING_RESERVATION"; payload: Parameters<typeof EmailService.sendPendingReservationEmail>[0] }
@@ -103,29 +104,34 @@ export class RestaurantService {
         // Centraliza el guardado físico para reusar en create y update.
         const extension = path.extname(imageFile.originalname) || ".jpg";
         const fileName = `restaurant-${Date.now()}${extension}`;
-        const publicDir = path.join(process.cwd(), "public", "restaurants");
-        const filePath = path.join(publicDir, fileName);
+        const filePath = `restaurants/${fileName}`;
 
-        await mkdir(publicDir, { recursive: true });
-        await writeFile(filePath, imageFile.buffer);
+        const { error } = await supabase.storage
+        .from("dishSync-img")
+        .upload(filePath, imageFile.buffer, {
+            contentType: `image/${extension.replace(".", "")}`,
+            upsert: true,
+        });
 
-        return `/public/restaurants/${fileName}`;
+        if (error) throw new Error(`Error pujant imatge: ${error.message}`);
+
+        const { data } = supabase.storage
+            .from("dishSync-img")
+            .getPublicUrl(filePath);
+
+        return data.publicUrl;
     }
 
     private static async removeLocalRestaurantImage(imageUrl?: string | null) {
         // Solo eliminamos imágenes locales gestionadas por la app.
         // Esto evita borrar URLs externas o rutas no controladas.
-        if (!imageUrl || !imageUrl.startsWith("/public/restaurants/")) return;
+        if (!imageUrl || !imageUrl.includes("/restaurants/")) return;
 
-        const relativePath = imageUrl.replace(/^\/+/, "");
-        const imagePath = path.join(process.cwd(), relativePath);
+        const filePath = "restaurants/" + imageUrl.split("/restaurants/")[1];
 
-        try {
-            await unlink(imagePath);
-        } catch {
-            // Si no existe o no se puede borrar, no bloqueamos el update.
-            // Prioridad: permitir que la actualización de datos continue.
-        }
+        await supabase.storage
+            .from("dishSync-img")
+            .remove([filePath]);
     }
 
     /**

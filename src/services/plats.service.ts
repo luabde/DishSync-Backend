@@ -3,31 +3,38 @@ import { mkdir, unlink, writeFile } from "fs/promises";
 import { CategoriaDTO, PlatDTO, UpdatePlatAvailabilityDTO, UpdatePlatDTO } from "../models/plats.model";
 import { prisma } from "../loaders/prisma.loader";
 import { AppError } from "../utils/AppError";
+import { supabase } from "../loaders/supabase";
 
 export class PlatService {
     private static async saveDishImage(imageFile: { originalname: string; buffer: Buffer }) {
         const extension = path.extname(imageFile.originalname) || ".jpg";
         const fileName = `dish-${Date.now()}${extension}`;
-        const publicDir = path.join(process.cwd(), "public", "dishes");
-        const filePath = path.join(publicDir, fileName);
+        const filePath = `dishes/${fileName}`;
 
-        await mkdir(publicDir, { recursive: true });
-        await writeFile(filePath, imageFile.buffer);
+        const { error } = await supabase.storage
+            .from("dishSync-img")
+            .upload(filePath, imageFile.buffer, {
+                contentType: `image/${extension.replace(".", "")}`,
+                upsert: true,
+            });
 
-        return `/public/dishes/${fileName}`;
+        if (error) throw new Error(`Error pujant imatge: ${error.message}`);
+
+        const { data } = supabase.storage
+            .from("dishSync-img")
+            .getPublicUrl(filePath);
+
+        return data.publicUrl;
     }
 
     private static async removeLocalDishImage(imageUrl?: string | null) {
-        if (!imageUrl || !imageUrl.startsWith("/public/dishes/")) return;
+        if (!imageUrl || !imageUrl.includes("/dishes/")) return;
 
-        const relativePath = imageUrl.replace(/^\/+/, "");
-        const imagePath = path.join(process.cwd(), relativePath);
+        const filePath = "dishes/" + imageUrl.split("/dishes/")[1];
 
-        try {
-            await unlink(imagePath);
-        } catch {
-            // No bloqueamos update si la imagen local ya no existe.
-        }
+        await supabase.storage
+            .from("dishsync-images")
+            .remove([filePath]);
     }
 
     static async createPlat(data: PlatDTO, imageFile?: { originalname: string; buffer: Buffer }) {

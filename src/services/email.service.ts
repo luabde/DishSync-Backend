@@ -68,6 +68,9 @@ export class EmailService {
         user: envConfig.mail.user,
         pass: envConfig.mail.pass,
       },
+      connectionTimeout: 10000, // 10 segundos
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
   }
 

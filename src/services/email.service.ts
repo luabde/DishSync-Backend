@@ -68,7 +68,6 @@ export class EmailService {
         user: envConfig.mail.user,
         pass: envConfig.mail.pass,
       },
-      family: 4
     });
   }
 

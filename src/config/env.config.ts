@@ -35,7 +35,7 @@ export const envConfig = {
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'default_refresh_secret_key',
   },
 
-  // SMTP / correo
+  // Correo (API HTTP Brevo)
   mail: {
     host: process.env.MAIL_HOST || 'smtp.gmail.com',
     port: Number(process.env.MAIL_PORT || 587),
@@ -43,5 +43,6 @@ export const envConfig = {
     user: process.env.MAIL_USER || '',
     pass: process.env.MAIL_PASS || '',
     from: process.env.MAIL_FROM || (process.env.MAIL_USER ? `El Castell <${process.env.MAIL_USER}>` : 'El Castell <no-reply@elcastell.local>'),
+    brevoApiKey: process.env.BREVO_API_KEY || '',
   },
 };

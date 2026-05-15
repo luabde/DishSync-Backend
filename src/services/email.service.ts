@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { BrevoClient } from "@getbrevo/brevo";
 import { envConfig } from "../config/env.config";
 
 type EmailOptions = {
@@ -55,41 +55,35 @@ const wrapEmail = (content: string) => `
 `;
 
 export class EmailService {
-  private static createTransporter() {
-    if (!envConfig.mail.host || !envConfig.mail.user || !envConfig.mail.pass) {
-      throw new Error("Configuración SMTP incompleta");
+  private static brevoClient: BrevoClient | null = null;
+
+  private static getTransactionalEmailsApi() {
+    if (!envConfig.mail.brevoApiKey) {
+      throw new Error("BREVO_API_KEY no configurada");
+    }
+    if (!envConfig.mail.user) {
+      throw new Error("MAIL_USER no configurado (email remitente verificado en Brevo)");
     }
 
-    return nodemailer.createTransport({
-      host: envConfig.mail.host,
-      port: envConfig.mail.port,
-      secure: envConfig.mail.secure,
-      auth: {
-        user: envConfig.mail.user,
-        pass: envConfig.mail.pass,
-      },
-      connectionTimeout: 10000, // 10 segundos
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
+    if (!this.brevoClient) {
+      this.brevoClient = new BrevoClient({ apiKey: envConfig.mail.brevoApiKey });
+    }
+
+    return this.brevoClient.transactionalEmails;
   }
 
   static async sendEmail({ to, subject, html }: EmailOptions) {
-    const transporter = this.createTransporter();
-    console.log("Enviando email");
-    const info = await transporter.sendMail({
-      from: envConfig.mail.from,
-      to,
+    const transactionalEmailsApi = this.getTransactionalEmailsApi();
+
+    const result = await transactionalEmailsApi.sendTransacEmail({
+      sender: { name: "El Castell", email: envConfig.mail.user },
+      to: [{ email: to }],
       subject,
-      html,
+      htmlContent: html,
     });
 
-    // Diagnóstico de entrega SMTP (útil en desarrollo cuando "no llega el correo").
-    console.log("[EmailService] SMTP result", {
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
-      response: info.response,
+    console.log("[EmailService] Brevo result", {
+      messageId: result.messageId,
     });
   }
 

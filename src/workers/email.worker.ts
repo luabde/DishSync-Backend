@@ -1,7 +1,5 @@
 import { workerData, parentPort } from "worker_threads";
 import { EmailService } from "../services/email.service";
-import dotenv from "dotenv";
-dotenv.config();
 
 type EmailJob =
     | { type: "PENDING_RESERVATION"; payload: Parameters<typeof EmailService.sendPendingReservationEmail>[0] }

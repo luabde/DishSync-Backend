@@ -76,7 +76,7 @@ export class EmailService {
 
   static async sendEmail({ to, subject, html }: EmailOptions) {
     const transporter = this.createTransporter();
-
+    console.log("Enviando email");
     const info = await transporter.sendMail({
       from: envConfig.mail.from,
       to,

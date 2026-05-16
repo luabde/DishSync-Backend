@@ -63,8 +63,16 @@ export class AuthController {
             await UserService.logout(userId);
 
             // Eliminar cookies
-            res.clearCookie("access_token");
-            res.clearCookie("refresh_token");
+            res.clearCookie("access_token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+            });
+            res.clearCookie("refresh_token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+            });
 
             res.status(200).json({ message: "Logout exitoso" });
         } catch (error) {
